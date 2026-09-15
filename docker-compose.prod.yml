@@ -38,7 +38,7 @@ services:
       FRONTEND_SERVER_NAME: shulepay.demo.nexoryatech.com
       BACKEND_UPSTREAM: http://backend:80
     ports:
-      - "127.0.0.1:8081:80"
+      - "127.0.0.1:8082:80"
 
 volumes:
   backend_storage:
