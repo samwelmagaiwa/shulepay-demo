@@ -215,6 +215,33 @@ const fetchPendingPatients = () => {}
         </div>
       </CCol>
 
+      <!-- Followups -->
+      <CCol class="metric-col">
+        <div
+          class="stat-card premium-shadow shadow-violet"
+          style="border-left: 4px solid #a855f7; border-top: 1px solid #a855f7"
+        >
+          <div class="stat-card-header mb-1">
+            <div class="stat-icon-wrapper" style="background-color: rgba(168, 85, 247, 0.15)">
+              <CIcon :icon="cilUser" class="stat-icon" style="color: #a855f7" />
+            </div>
+            <div class="stat-main-info">
+              <h3 class="stat-value" style="color: #a855f7">{{ getValue('followups') }}</h3>
+              <span class="stat-label">{{ t('dashboard.cardTodayCollect') }}</span>
+            </div>
+          </div>
+          <div
+            v-if="dashboard.compLabel"
+            class="stat-card-footer mt-auto pt-1"
+          >
+            <div class="stat-comparison">
+              <span class="prev-value text-muted">{{ getPrevValue('followups') }}</span>
+              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
+            </div>
+          </div>
+        </div>
+      </CCol>
+
       <!-- Outstanding Debt (stacked with invoice breakdown) -->
       <CCol class="metric-col">
         <div
@@ -258,33 +285,6 @@ const fetchPendingPatients = () => {}
                   </span>
                 </span>
               </div>
-            </div>
-          </div>
-        </div>
-      </CCol>
-
-      <!-- Followups -->
-      <CCol class="metric-col">
-        <div
-          class="stat-card premium-shadow shadow-violet"
-          style="border-left: 4px solid #a855f7; border-top: 1px solid #a855f7"
-        >
-          <div class="stat-card-header mb-1">
-            <div class="stat-icon-wrapper" style="background-color: rgba(168, 85, 247, 0.15)">
-              <CIcon :icon="cilUser" class="stat-icon" style="color: #a855f7" />
-            </div>
-            <div class="stat-main-info">
-              <h3 class="stat-value" style="color: #a855f7">{{ getValue('followups') }}</h3>
-              <span class="stat-label">{{ t('dashboard.cardTodayCollect') }}</span>
-            </div>
-          </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto pt-1"
-          >
-            <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('followups') }}</span>
-              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
             </div>
           </div>
         </div>
