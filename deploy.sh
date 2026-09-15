@@ -16,8 +16,8 @@ set -euo pipefail
 # ── Config ────────────────────────────────────────────────────────────────────
 # Detect if running locally (Windows/Git Bash) or on the server
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -d "/www/shulepay" ]]; then
-  APP_DIR="/www/shulepay"
+if [[ -d "/www/shulepay-demo" ]]; then
+  APP_DIR="/www/shulepay-demo"
 else
   APP_DIR="$SCRIPT_DIR"
 fi
@@ -122,10 +122,10 @@ cmd_deploy() {
     || error "Failed to start containers (or timed out after 3m). Run: ./deploy.sh logs"
   success "Containers started"
 
-  # 4. Wait for DB health (skip if using external DB — no shulepay_db container)
-  if docker ps --filter "name=shulepay_db" --format '{{.Names}}' | grep -q shulepay_db; then
+  # 4. Wait for DB health (skip if using external DB — no shulepay_demo_db container)
+  if docker ps --filter "name=shulepay_demo_db" --format '{{.Names}}' | grep -q shulepay_demo_db; then
     log "Waiting for database..."
-    health_check shulepay_db 90 \
+    health_check shulepay_demo_db 90 \
       || error "Database did not become healthy in time. Run: ./deploy.sh logs"
   else
     log "Using external database — skipping container health check"
@@ -136,10 +136,10 @@ cmd_deploy() {
 
   # 6. Run migrations only if there are pending ones
   log "Checking for pending migrations..."
-  PENDING=$(docker exec shulepay_backend php artisan migrate:status 2>/dev/null | grep -c "Pending" || true)
+  PENDING=$(docker exec shulepay_demo_backend php artisan migrate:status 2>/dev/null | grep -c "Pending" || true)
   if [[ "$PENDING" -gt 0 ]]; then
     log "Found $PENDING pending migration(s) — running..."
-    docker exec shulepay_backend php artisan migrate --force \
+    docker exec shulepay_demo_backend php artisan migrate --force \
       || error "Migrations failed. Run: ./deploy.sh rollback"
     success "Migrations complete ($PENDING applied)"
   else
@@ -148,15 +148,15 @@ cmd_deploy() {
 
   # 7. Artisan optimisation — single optimize call (config + route + view + event cache)
   log "Optimising Laravel..."
-  docker exec shulepay_backend php artisan optimize \
+  docker exec shulepay_demo_backend php artisan optimize \
     || warn "artisan optimize had warnings — continuing"
   success "Laravel cache warmed"
 
   # 8. Storage link (idempotent — safe to always run)
-  docker exec shulepay_backend php artisan storage:link 2>/dev/null || true
+  docker exec shulepay_demo_backend php artisan storage:link 2>/dev/null || true
 
   # 9. Queue restart (picks up new code)
-  docker exec shulepay_backend php artisan queue:restart 2>/dev/null || true
+  docker exec shulepay_demo_backend php artisan queue:restart 2>/dev/null || true
 
   # 10. Final health check
   log "Verifying containers are running..."
@@ -181,8 +181,8 @@ cmd_rollback() {
   [[ "$PREV_TAG" == "none" ]] && error "Previous tag is 'none'. Cannot rollback."
 
   # Resolve actual image names from env (set by CI) or fall back to defaults
-  BACKEND_IMG="${BACKEND_IMAGE:-magaiwa/magreth-backend}"
-  FRONTEND_IMG="${FRONTEND_IMAGE:-magaiwa/magreth-frontend}"
+  BACKEND_IMG="${BACKEND_IMAGE:-magaiwa/shulepay-demo-backend}"
+  FRONTEND_IMG="${FRONTEND_IMAGE:-magaiwa/shulepay-demo-frontend}"
 
   warn "Rolling back to tag: $PREV_TAG"
 
@@ -208,7 +208,7 @@ cmd_status() {
   echo ""
   echo -e "${CYAN}Resource usage:${NC}"
   docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}" \
-    shulepay_backend shulepay_frontend shulepay_db 2>/dev/null || true
+    shulepay_demo_backend shulepay_demo_frontend 2>/dev/null || true
   echo ""
 }
 
@@ -231,10 +231,10 @@ cmd_restart() {
 
 cmd_migrate() {
   log "Checking for pending migrations..."
-  PENDING=$(docker exec shulepay_backend php artisan migrate:status 2>/dev/null | grep -c "Pending" || true)
+  PENDING=$(docker exec shulepay_demo_backend php artisan migrate:status 2>/dev/null | grep -c "Pending" || true)
   if [[ "$PENDING" -gt 0 ]]; then
     log "Found $PENDING pending migration(s) — running..."
-    docker exec shulepay_backend php artisan migrate --force
+    docker exec shulepay_demo_backend php artisan migrate --force
     success "Migrations done ($PENDING applied)"
   else
     success "No pending migrations — nothing to do"
@@ -305,15 +305,15 @@ cmd_release() {
   git log --oneline -1
   echo ""
   success "Release done! CI/CD pipeline will now trigger on GitHub. 🚀"
-  log "Watch it at: https://github.com/samwelmagaiwa/shulepay/actions"
+  log "Watch it at: https://github.com/samwelmagaiwa/shulepay-demo/actions"
 }
 
 cmd_shell() {
   local service=${2:-backend}
   case "$service" in
-    backend)  docker exec -it shulepay_backend bash ;;
-    frontend) docker exec -it shulepay_frontend sh ;;
-    db)       docker exec -it shulepay_db mysql -u root -p ;;
+    backend)  docker exec -it shulepay_demo_backend bash ;;
+    frontend) docker exec -it shulepay_demo_frontend sh ;;
+    db)       docker exec -it shulepay_demo_db mysql -u root -p ;;
     *)        error "Unknown service: $service. Use: backend, frontend, db" ;;
   esac
 }

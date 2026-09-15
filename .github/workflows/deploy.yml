@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  BACKEND_IMAGE:  magaiwa/magreth-backend
-  FRONTEND_IMAGE: magaiwa/magreth-frontend
+  BACKEND_IMAGE:  magaiwa/shulepay-demo-backend
+  FRONTEND_IMAGE: magaiwa/shulepay-demo-frontend
 
 # ══════════════════════════════════════════════════════════════════════════════
 # JOB 1 — BACKEND CHECKS (lint + tests)
@@ -225,26 +225,26 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           envs: APP_KEY,DB_PASSWORD,DB_ROOT_PASSWORD,SMS_API_KEY,SMS_SECRET_KEY,SMS_SENDER_ID,DOCKERHUB_USERNAME,IMAGE_TAG
           script: |
-            mkdir -p /www/shulepay
-            printf 'APP_ENV=production\n'                  > /www/shulepay/.env
-            printf 'APP_DEBUG=false\n'                    >> /www/shulepay/.env
-            printf 'DB_CONNECTION=mysql\n'                >> /www/shulepay/.env
-            printf 'APP_KEY=%s\n' "$APP_KEY"              >> /www/shulepay/.env
-            printf 'APP_URL=https://magrethschools.sc.tz\n' >> /www/shulepay/.env
-            printf 'DB_DATABASE=shulepay\n'               >> /www/shulepay/.env
-            printf 'DB_USERNAME=shulepay\n'               >> /www/shulepay/.env
-            printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"      >> /www/shulepay/.env
-            printf 'DB_ROOT_PASSWORD=%s\n' "$DB_ROOT_PASSWORD" >> /www/shulepay/.env
-            printf 'SMS_DRIVER=kilakona\n'                >> /www/shulepay/.env
-            printf 'SMS_API_KEY=%s\n' "$SMS_API_KEY"      >> /www/shulepay/.env
-            printf 'SMS_SECRET_KEY=%s\n' "$SMS_SECRET_KEY" >> /www/shulepay/.env
-            printf 'SMS_SENDER_ID="%s"\n' "$SMS_SENDER_ID"  >> /www/shulepay/.env
-            printf 'SMS_COUNTRY_CODE=255\n'                 >> /www/shulepay/.env
-            printf 'DOCKERHUB_USERNAME=%s\n' "$DOCKERHUB_USERNAME" >> /www/shulepay/.env
-            printf 'BACKEND_IMAGE=magaiwa/magreth-backend\n'    >> /www/shulepay/.env
-            printf 'FRONTEND_IMAGE=magaiwa/magreth-frontend\n'  >> /www/shulepay/.env
-            printf 'IMAGE_TAG=%s\n' "$IMAGE_TAG"          >> /www/shulepay/.env
-            chmod 600 /www/shulepay/.env
+            mkdir -p /www/shulepay-demo
+            printf 'APP_ENV=production\n'                  > /www/shulepay-demo/.env
+            printf 'APP_DEBUG=false\n'                    >> /www/shulepay-demo/.env
+            printf 'DB_CONNECTION=mysql\n'                >> /www/shulepay-demo/.env
+            printf 'APP_KEY=%s\n' "$APP_KEY"              >> /www/shulepay-demo/.env
+            printf 'APP_URL=https://shulepay.demo.nexoryatech.com\n' >> /www/shulepay-demo/.env
+            printf 'DB_DATABASE=shulepay_demo\n'          >> /www/shulepay-demo/.env
+            printf 'DB_USERNAME=shulepay_demo\n'          >> /www/shulepay-demo/.env
+            printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"      >> /www/shulepay-demo/.env
+            printf 'DB_ROOT_PASSWORD=%s\n' "$DB_ROOT_PASSWORD" >> /www/shulepay-demo/.env
+            printf 'SMS_DRIVER=kilakona\n'                >> /www/shulepay-demo/.env
+            printf 'SMS_API_KEY=%s\n' "$SMS_API_KEY"      >> /www/shulepay-demo/.env
+            printf 'SMS_SECRET_KEY=%s\n' "$SMS_SECRET_KEY" >> /www/shulepay-demo/.env
+            printf 'SMS_SENDER_ID="%s"\n' "$SMS_SENDER_ID"  >> /www/shulepay-demo/.env
+            printf 'SMS_COUNTRY_CODE=255\n'               >> /www/shulepay-demo/.env
+            printf 'DOCKERHUB_USERNAME=%s\n' "$DOCKERHUB_USERNAME" >> /www/shulepay-demo/.env
+            printf 'BACKEND_IMAGE=magaiwa/shulepay-demo-backend\n'    >> /www/shulepay-demo/.env
+            printf 'FRONTEND_IMAGE=magaiwa/shulepay-demo-frontend\n'  >> /www/shulepay-demo/.env
+            printf 'IMAGE_TAG=%s\n' "$IMAGE_TAG"          >> /www/shulepay-demo/.env
+            chmod 600 /www/shulepay-demo/.env
 
       - name: Copy deploy files to server
         uses: appleboy/scp-action@v0.1.7
@@ -253,7 +253,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: "docker-compose.prod.yml,deploy.sh"
-          target: "/www/shulepay"
+          target: "/www/shulepay-demo"
 
       - name: Run deploy script on server
         uses: appleboy/ssh-action@v1.0.3
@@ -262,6 +262,6 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            cd /www/shulepay
+            cd /www/shulepay-demo
             chmod +x deploy.sh
             ./deploy.sh deploy
