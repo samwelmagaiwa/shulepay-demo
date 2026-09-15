@@ -4,16 +4,14 @@ services:
     image: magaiwa/shulepay-demo-backend:latest
     container_name: shulepay_demo_backend
     restart: unless-stopped
-    networks:
-      - default
-      - shulepay_default
+    network_mode: host
     environment:
       APP_ENV: production
       APP_KEY: ${APP_KEY}
       APP_URL: ${APP_URL}
       SESSION_SECURE_COOKIE: "true"
       DB_CONNECTION: mysql
-      DB_HOST: 172.19.0.1
+      DB_HOST: 127.0.0.1
       DB_PORT: 3306
       DB_DATABASE: ${DB_DATABASE:-shulepay-demo}
       DB_USERNAME: ${DB_USERNAME:-shulepay-demo}
@@ -26,8 +24,6 @@ services:
       SMS_SENDER_ID: ${SMS_SENDER_ID:-ShulePay}
     volumes:
       - backend_storage:/var/www/html/storage
-    expose:
-      - "80"
 
   frontend:
     image: magaiwa/shulepay-demo-frontend:latest
@@ -37,14 +33,9 @@ services:
       - backend
     environment:
       FRONTEND_SERVER_NAME: shulepay.demo.nexoryatech.com
-      BACKEND_UPSTREAM: http://backend:80
+      BACKEND_UPSTREAM: http://127.0.0.1:80
     ports:
       - "127.0.0.1:8082:80"
-
-networks:
-  default:
-  shulepay_default:
-    external: true
 
 volumes:
   backend_storage:
