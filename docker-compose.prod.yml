@@ -24,7 +24,7 @@ services:
     volumes:
       - backend_storage:/var/www/html/storage
     ports:
-      - "127.0.0.1:8083:80"
+      - "8083:80"
 
   frontend:
     image: magaiwa/shulepay-demo-frontend:latest
@@ -34,7 +34,7 @@ services:
       - backend
     environment:
       FRONTEND_SERVER_NAME: shulepay.demo.nexoryatech.com
-      BACKEND_UPSTREAM: http://127.0.0.1:8083
+      BACKEND_UPSTREAM: http://172.21.0.1:8083
     ports:
       - "127.0.0.1:8082:80"
 
