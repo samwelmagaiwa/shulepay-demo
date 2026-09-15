@@ -45,7 +45,7 @@ COPY . .
 RUN rm -f bootstrap/cache/services.php bootstrap/cache/packages.php
 
 # Remove any Windows-path symlink baked in by local dev, then set permissions
-RUN rm -f /var/www/html/public/storage \
+RUN rm -rf /var/www/html/public/storage \
  && chown -R www-data:www-data /var/www/html \
  && chmod -R 755 /var/www/html/storage \
  && chmod -R 755 /var/www/html/bootstrap/cache

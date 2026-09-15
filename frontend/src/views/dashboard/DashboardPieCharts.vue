@@ -81,15 +81,13 @@ const genericPieLabelsPlugin = {
       const x = Math.cos(midAngle) * midRadius + model.x
       const y = Math.sin(midAngle) * midRadius + model.y
 
-      // Shadow for readability
       ctx.shadowColor = 'rgba(0,0,0,0.5)'
       ctx.shadowBlur = 4
 
-      // Draw Value and Percentage
       ctx.fillText(value.toLocaleString(), x, y - 10)
       ctx.font = "normal 16px 'Outfit', sans-serif"
       ctx.fillText(percentage, x, y + 12)
-      ctx.font = "bold 22px 'Outfit', sans-serif" // Reset for next iteration
+      ctx.font = "bold 22px 'Outfit', sans-serif"
     })
     ctx.restore()
   },
@@ -109,7 +107,7 @@ const polarChartOptions = {
   scales: {
     r: {
       pointLabels: {
-        display: false, // Disabled standard labels to draw them manually in the plugin
+        display: false,
       },
       ticks: {
         display: true,
@@ -117,12 +115,12 @@ const polarChartOptions = {
         backdropPadding: 4,
         color: '#475569',
         z: 10,
-        maxTicksLimit: 6, // Reduced from 9 to increase spacing between round lines
+        maxTicksLimit: 6,
         font: { size: 13, weight: 'bold' },
       },
       grid: {
-        color: 'rgba(148, 163, 184, 0.25)', // Slightly darker for prominence
-        lineWidth: 1.5, // Increased from 1.0 to increase "line size"
+        color: 'rgba(148, 163, 184, 0.25)',
+        lineWidth: 1.5,
       },
       angleLines: {
         color: 'rgba(148, 163, 184, 0.1)',
@@ -152,97 +150,141 @@ const polarChartOptions = {
   animation: chartOptions.animation,
 }
 
+// Student gender. Reads gender_breakdown, a headcount taken over the same
+// population as the All Students card, so the slices add up to that figure.
+const genderBreakdown = computed(() => dashboard.stats?.gender_breakdown || null)
+
 const genderChartData = computed(() => {
-  const stats = dashboard.pieStats?.gender || { male: 0, female: 0, no_gender: 0, unknown: 0 }
+  const g = genderBreakdown.value || { male: 0, female: 0, unspecified: 0 }
   return {
-    labels: ['Kiume', 'Kike', 'Nyingine', 'Haijabainishwa'],
+    labels: [t('dashboard.genderMale'), t('dashboard.genderFemale'), t('dashboard.genderUnspecified')],
     datasets: [
       {
-        label: 'Patients',
+        label: t('dashboard.genderDistTitle'),
         backgroundColor: [
           'rgba(51, 153, 255, 0.7)',
           'rgba(229, 83, 83, 0.7)',
-          'rgba(249, 177, 21, 0.7)',
           'rgba(157, 165, 177, 0.7)',
         ],
-        borderColor: ['#3399ff', '#e55353', '#f9b115', '#9da5b1'],
+        borderColor: ['#3399ff', '#e55353', '#9da5b1'],
         borderWidth: 1,
-        data: [stats.male, stats.female, stats.no_gender, stats.unknown],
+        data: [g.male || 0, g.female || 0, g.unspecified || 0],
       },
     ],
   }
 })
 
-const visitTypeChartData = computed(() => {
-  const stats = dashboard.pieStats?.visit_type || { new: 0, followup: 0 }
+// Revenue vs Expenses. Both figures come from one backend summary measured over
+// the same period (the current academic year), so the two slices are directly
+// comparable.
+const revenueExpenses = computed(() => dashboard.stats?.revenue_vs_expenses || null)
+
+const revenueExpenseChartData = computed(() => {
+  const s = revenueExpenses.value
   return {
-    labels: ['Wapya', 'Wanaorudia'],
+    labels: [t('dashboard.revenueLabel'), t('dashboard.expensesLabel')],
     datasets: [
       {
-        backgroundColor: ['rgba(46, 184, 92, 0.7)', 'rgba(249, 177, 21, 0.7)'],
-        borderColor: ['#2eb85c', '#f9b115'],
-        borderWidth: 1,
-        data: [stats.new, stats.followup],
-      },
-    ],
-  }
-})
-
-const ageGroupChartData = computed(() => {
-  const stats = dashboard.pieStats?.age_groups || {
-    neonate: 0,
-    infant: 0,
-    child: 0,
-    adolescent: 0,
-    adult: 0,
-    elderly: 0,
-  }
-
-  const hasData = Object.values(stats).some((v) => v > 0)
-
-  if (!hasData) {
-    return {
-      labels: ['No Data'],
-      datasets: [{ backgroundColor: ['#eaeaeb'], data: [0] }],
-    }
-  }
-
-  return {
-    labels: [
-      'Chekechea: Umri 3-5',
-      'Darasa 1-3: Umri 6-8',
-      'Darasa 4-7: Umri 9-12',
-      'Kidato 1-2: Umri 13-14',
-      'Kidato 3-4: Umri 15-16',
-      'Kidato 5-6: Umri 17-18',
-    ],
-    datasets: [
-      {
-        backgroundColor: [
-          'rgba(50, 31, 219, 0.6)',
-          'rgba(51, 153, 255, 0.6)',
-          'rgba(46, 184, 92, 0.6)',
-          'rgba(249, 177, 21, 0.6)',
-          'rgba(229, 83, 83, 0.6)',
-          'rgba(99, 111, 131, 0.6)',
-        ],
-        borderColor: ['#321fdb', '#3399ff', '#2eb85c', '#f9b115', '#e55353', '#636f83'],
+        backgroundColor: ['rgba(46, 184, 92, 0.7)', 'rgba(229, 83, 83, 0.7)'],
+        borderColor: ['#2eb85c', '#e55353'],
         borderWidth: 1,
         data: [
-          stats.neonate,
-          stats.infant,
-          stats.child,
-          stats.adolescent,
-          stats.adult,
-          stats.elderly,
+          Math.round((s?.revenue_cents || 0) / 100),
+          Math.round((s?.expenses_cents || 0) / 100),
         ],
+      },
+    ],
+  }
+})
+
+const hasRevenueExpenseData = computed(() => {
+  const s = revenueExpenses.value
+  return !!s && ((s.revenue_cents || 0) > 0 || (s.expenses_cents || 0) > 0)
+})
+
+const compactTzs = (v) => {
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
+  if (v >= 1_000) return (v / 1_000).toFixed(1).replace(/\.0$/, '') + 'K'
+  return String(v)
+}
+
+const revenueLabelsPlugin = {
+  id: 'revenueLabels',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart
+    const data = chart.data.datasets[0].data
+    const total = data.reduce((a, b) => a + b, 0)
+    if (!total) return
+    ctx.save()
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = '#fff'
+    chart.getDatasetMeta(0).data.forEach((el, i) => {
+      const value = data[i]
+      if (!value) return
+      const mid = el.startAngle + (el.endAngle - el.startAngle) / 2
+      const r = el.outerRadius * 0.65 + el.innerRadius * 0.35
+      const x = Math.cos(mid) * r + el.x
+      const y = Math.sin(mid) * r + el.y
+      ctx.shadowColor = 'rgba(0,0,0,0.5)'
+      ctx.shadowBlur = 4
+      ctx.font = "bold 20px 'Outfit', sans-serif"
+      ctx.fillText(compactTzs(value), x, y - 10)
+      ctx.font = "normal 15px 'Outfit', sans-serif"
+      ctx.fillText(((value / total) * 100).toFixed(1) + '%', x, y + 12)
+    })
+    ctx.restore()
+  },
+}
+
+const revenueChartOptions = computed(() => ({
+  ...chartOptions,
+  plugins: {
+    ...(chartOptions.plugins || {}),
+    tooltip: {
+      callbacks: {
+        label: (c) => `${c.label}: TZS ${Number(c.raw || 0).toLocaleString()}`,
+      },
+    },
+  },
+}))
+
+// Students per class, straight from class_distribution: the school's real
+// classes, by name, in its own order.
+const classDistribution = computed(() => dashboard.stats?.class_distribution || [])
+
+const CLASS_COLOURS = [
+  ['rgba(50, 31, 219, 0.6)', '#321fdb'],
+  ['rgba(51, 153, 255, 0.6)', '#3399ff'],
+  ['rgba(46, 184, 92, 0.6)', '#2eb85c'],
+  ['rgba(249, 177, 21, 0.6)', '#f9b115'],
+  ['rgba(229, 83, 83, 0.6)', '#e55353'],
+  ['rgba(99, 111, 131, 0.6)', '#636f83'],
+  ['rgba(111, 66, 193, 0.6)', '#6f42c1'],
+  ['rgba(32, 201, 151, 0.6)', '#20c997'],
+  ['rgba(253, 126, 20, 0.6)', '#fd7e14'],
+]
+
+const ageGroupChartData = computed(() => {
+  const rows = classDistribution.value.filter((r) => r.students > 0)
+  if (!rows.length) {
+    return { labels: ['No Data'], datasets: [{ backgroundColor: ['#eaeaeb'], data: [0] }] }
+  }
+  const colour = (i) => CLASS_COLOURS[i % CLASS_COLOURS.length]
+  return {
+    labels: rows.map((r) => r.class_name),
+    datasets: [
+      {
+        backgroundColor: rows.map((_, i) => colour(i)[0]),
+        borderColor: rows.map((_, i) => colour(i)[1]),
+        borderWidth: 1,
+        data: rows.map((r) => r.students),
       },
     ],
   }
 })
 
 const plugins = []
-// 4. Custom Leader Lines Plugin for Polar Area
 const polarPlugins = [
   {
     id: 'polarLeaderLines',
@@ -265,43 +307,29 @@ const polarPlugins = [
         const sinA = Math.sin(angle)
 
         // ── 1. Prepare label strings ──────────────────────────────────────────
-        const originalLabel = chart.data.labels[index] || ''
-        const cleanLabel = originalLabel.includes(': ')
-          ? originalLabel.split(': ')[1]
-          : originalLabel
-        const ageStats = dashboard.pieStats?.age_groups || {}
-        const ageValues = [
-          ageStats.neonate || 0,
-          ageStats.infant || 0,
-          ageStats.child || 0,
-          ageStats.adolescent || 0,
-          ageStats.adult || 0,
-          ageStats.elderly || 0,
-        ]
-        const val = ageValues[index] ?? 0
+        // Label and value come from the chart's own data, so they always match
+        // the slice being drawn whatever classes the school has.
+        const cleanLabel = chart.data.labels[index] || ''
+        const val = chart.data.datasets[0].data[index] ?? 0
         const valueText = `(${val.toLocaleString()})`
 
         // ── 2. Set font early so we can measure text width for clamping ───────
         ctx.font = "800 18px 'Outfit', sans-serif"
         const maxTextW =
-          Math.max(ctx.measureText(cleanLabel).width, ctx.measureText(valueText).width) + 12 // safety buffer
+          Math.max(ctx.measureText(cleanLabel).width, ctx.measureText(valueText).width) + 12
 
         // ── 3. Compute arrowhead target position ──────────────────────────────
-        const labelPadding = 40 // px beyond r.drawingArea
-        // Upper-half sectors nudged downward so they clear the scale tick labels
+        const labelPadding = 40
         const topNudge = sinA < 0 ? Math.abs(sinA) * 40 : 0
         let xLabel = cosA * (r.drawingArea + labelPadding) + model.x
         let yLabel = sinA * (r.drawingArea + labelPadding) + model.y + topNudge
 
-        // ── 4. Clamp using CANVAS bounds (not chart-area) to prevent arrow reversal ──
-        // Using canvas dims ensures the arrow always points AWAY from center.
+        // ── 4. Clamp using CANVAS bounds ──────────────────────────────────────
         const cw = chart.width
         const ch = chart.height
         const lineH = 22
-        // Half-width of the text block that extends away from the arrowhead tip
         const halfText = maxTextW + 10
         const yBlock = lineH * 2 + 10
-        // Keep arrowhead tip inside canvas with enough room for text beyond it
         xLabel = Math.max(
           cosA < 0 ? halfText + 4 : 4,
           Math.min(xLabel, cosA >= 0 ? cw - halfText - 4 : cw - 4),
@@ -342,7 +370,7 @@ const polarPlugins = [
         ctx.closePath()
         ctx.fill()
 
-        // ── 7. Draw text (value first, then name) ─────────────────────────────
+        // ── 7. Draw text ──────────────────────────────────────────────────────
         ctx.fillStyle = borderColor || '#475569'
         const gap = 6
         const textX = xLabel + cosA * gap
@@ -364,7 +392,7 @@ const polarPlugins = [
 
 <template>
   <div class="row mb-4 mx-0 px-0">
-    <!-- Patient Age Distribution (Polar Area - Expanded to col-6) -->
+    <!-- Student Distribution by Class (Polar Area - col-6) -->
     <div class="col-lg-6 col-md-12">
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 font-weight-bold pb-0 pt-3">
@@ -373,12 +401,11 @@ const polarPlugins = [
           </h6>
         </div>
         <div class="card-body p-0" style="min-height: 450px; height: 450px">
-          <!-- Subtle top-right sync indicator for the card -->
           <div v-if="dashboard.isSyncing" class="sync-indicator-mini" title="Background syncing in progress...">
             <div class="spinner-border spinner-border-sm text-primary" style="width: 0.8rem; height: 0.8rem;"></div>
           </div>
 
-          <div v-if="ageGroupChartData.labels[0] === 'No Data' && !dashboard.isLoading" 
+          <div v-if="ageGroupChartData.labels[0] === 'No Data' && !dashboard.isLoading"
                class="d-flex align-items-center justify-content-center h-100 text-center text-muted">
             <p class="mb-0">Hakuna Data</p>
           </div>
@@ -395,7 +422,7 @@ const polarPlugins = [
       </div>
     </div>
 
-    <!-- Patient Gender Distribution (Donut - col-3) -->
+    <!-- Student Gender Distribution -->
     <div class="col-lg-3 col-md-6">
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 font-weight-bold pb-0 pt-3">
@@ -405,44 +432,69 @@ const polarPlugins = [
         </div>
         <div class="card-body p-2" style="min-height: 450px; height: 450px">
           <div
-            v-if="!dashboard.pieStats || !dashboard.pieStats.gender"
+            v-if="!genderBreakdown || !genderBreakdown.total"
             class="d-flex align-items-center justify-content-center h-100 text-center text-muted"
           >
-            <p class="mb-0">Hakuna Data</p>
+            <p class="mb-0">{{ t('dashboard.noStudentsYet') }}</p>
           </div>
-          <CChartPie
-            v-else
-            :data="genderChartData"
-            :options="pieChartOptions"
-            :plugins="[genericPieLabelsPlugin]"
-            style="height: 100%"
-          />
+          <template v-else>
+            <div style="height: calc(100% - 32px)">
+              <CChartPie
+                :data="genderChartData"
+                :options="pieChartOptions"
+                :plugins="[genericPieLabelsPlugin]"
+                style="height: 100%"
+              />
+            </div>
+            <div class="text-center text-muted small pt-1">
+              {{ t('dashboard.genderTotal', { count: genderBreakdown.total.toLocaleString() }) }}
+            </div>
+          </template>
         </div>
       </div>
     </div>
 
-    <!-- Visit Type Distribution (Donut - col-3) -->
+    <!-- Revenue vs Expenses -->
     <div class="col-lg-3 col-md-6">
       <div class="card h-100 border-0 shadow-sm">
         <div class="card-header bg-transparent border-0 font-weight-bold pb-0 pt-3">
           <h6 class="mb-2 fw-bold text-center text-primary" style="font-size: 20px">
-            {{ t('dashboard.newVsReturningTitle') }}
+            {{ t('dashboard.revenueVsExpensesTitle') }}
           </h6>
-        </div>
-        <div class="card-body p-2" style="min-height: 450px; height: 450px">
-          <div
-            v-if="!dashboard.pieStats || !dashboard.pieStats.visit_type"
-            class="d-flex align-items-center justify-content-center h-100 text-center text-muted"
-          >
-            <p class="mb-0">Hakuna Data</p>
+          <div v-if="revenueExpenses?.period" class="text-center text-muted small">
+            {{ revenueExpenses.period.label }}
           </div>
-          <CChartPie
-            v-else
-            :data="visitTypeChartData"
-            :options="chartOptions"
-            :plugins="[genericPieLabelsPlugin]"
-            style="height: 100%"
-          />
+        </div>
+        <div class="card-body p-2 d-flex flex-column" style="min-height: 450px; height: 450px">
+          <div
+            v-if="dashboard.isLocked"
+            class="d-flex align-items-center justify-content-center flex-grow-1 text-muted"
+          >
+            <p class="mb-0">🔒 {{ t('dashboardLock.locked') }}</p>
+          </div>
+          <div
+            v-else-if="!hasRevenueExpenseData"
+            class="d-flex align-items-center justify-content-center flex-grow-1 text-muted"
+          >
+            <p class="mb-0">{{ t('dashboard.noRevenueExpenseData') }}</p>
+          </div>
+          <template v-else>
+            <div class="flex-grow-1" style="min-height: 0">
+              <CChartPie
+                :data="revenueExpenseChartData"
+                :options="revenueChartOptions"
+                :plugins="[revenueLabelsPlugin]"
+                style="height: 100%"
+              />
+            </div>
+            <div class="text-center pt-2">
+              <div class="text-muted small">{{ t('dashboard.netLabel') }}</div>
+              <div class="fw-bold fs-5"
+                   :class="revenueExpenses.net_cents >= 0 ? 'text-success' : 'text-danger'">
+                TZS {{ Math.round(revenueExpenses.net_cents / 100).toLocaleString() }}
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </div>

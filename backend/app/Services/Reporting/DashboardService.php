@@ -11,6 +11,7 @@ use App\Models\Student;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
+
 class DashboardService
 {
     public function stats(?int $schoolId): array
@@ -75,7 +76,7 @@ class DashboardService
         $totalOutstanding = (clone $invoiceQ)
             ->whereIn('status', ['unpaid', 'partial'])
             ->leftJoin(
-                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as p"),
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} WHERE deleted_at IS NULL GROUP BY invoice_id) as p"),
                 'p.invoice_id', '=', "{$invoiceTable}.id"
             )
             ->selectRaw("SUM({$invoiceTable}.total_amount_cents - COALESCE(p.paid_sum, 0)) as outstanding")
@@ -195,7 +196,7 @@ class DashboardService
             ->when($schoolId, fn ($q) => $q->where("{$invoiceTable}.school_id", $schoolId))
             ->whereIn("{$invoiceTable}.status", ['unpaid', 'partial'])
             ->leftJoin(
-                DB::raw("(SELECT invoice_id, SUM(amount_cents) AS paid_sum FROM {$paymentTable} GROUP BY invoice_id) AS pd"),
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) AS paid_sum FROM {$paymentTable} WHERE deleted_at IS NULL GROUP BY invoice_id) AS pd"),
                 'pd.invoice_id', '=', "{$invoiceTable}.id"
             )
             ->join('enrollments', function ($join) use ($invoiceTable) {
@@ -223,7 +224,7 @@ class DashboardService
         $topDebtors = (clone $invoiceQ)
             ->whereIn('status', ['unpaid', 'partial'])
             ->leftJoin(
-                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} GROUP BY invoice_id) as pd"),
+                DB::raw("(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM {$paymentTable} WHERE deleted_at IS NULL GROUP BY invoice_id) as pd"),
                 'pd.invoice_id', '=', "{$invoiceTable}.id"
             )
             ->selectRaw("{$invoiceTable}.*, ({$invoiceTable}.total_amount_cents - COALESCE(pd.paid_sum, 0)) as balance")
@@ -298,9 +299,16 @@ class DashboardService
         return [
             'total_students' => $studentCount,
             'sponsored_free_count' => $sponsoredFreeCount,
+            // Headcount by gender over the same population as total_students, so
+            // the chart's slices sum to the All Students card. Not money: it is
+            // deliberately absent from the privacy lock's redaction list.
+            'gender_breakdown' => app(StudentGenderBreakdown::class)->for($schoolId),
             'total_collected_cents' => (int) $totalCollectedCents,
             'total_outstanding_cents' => (int) $totalOutstanding,
             'total_expenses_cents' => (int) $totalExpensesCents,
+            // Same-period comparison for the Revenue vs Expenses chart. Kept
+            // separate from the two figures above, which cover different windows.
+            'revenue_vs_expenses' => app(RevenueExpenseSummary::class)->for($schoolId, $today),
             'recent_payments' => $recentPayments,
             'payment_trend' => $paymentTrend,
             'collection_rate' => $collectionRate,
@@ -316,6 +324,10 @@ class DashboardService
             'method_breakdown' => $methodBreakdown,
             'school_breakdown' => $schoolBreakdown,
             'class_breakdown' => $classBreakdown,
+            // Real classes in school order, for the Students by Class chart.
+            'class_distribution' => app(StudentClassDistribution::class)->for($schoolId),
+            // Per-class collections and headcounts for the fee ribbon and charts.
+            'class_fee_collection' => app(ClassFeeCollection::class)->for($schoolId),
             'class_fee_breakdown_cents' => $classFeeBreakdown,
             'class_debt_breakdown' => $classDebtBreakdown,
             'top_debtors' => $topDebtors,

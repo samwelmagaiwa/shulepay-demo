@@ -89,61 +89,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
   })
 
-  // ── Pie chart data ────────────────────────────────────────────────────────
-  // DashboardPieCharts.vue expects { gender, visit_type, age_groups }
-  const pieStats = computed(() => {
-    const s = stats.value
-    if (!s) return null
-
-    // Map method_breakdown → gender-style chart (cash/mpesa/bank/cheque)
-    const methods = {}
-    ;(s.method_breakdown || []).forEach(m => {
-      methods[m.method] = m.count
-    })
-
-    // Map class_breakdown → age_groups
-    const cb = s.class_breakdown || {}
-    // Helper: sum all keys whose normalized name matches any of the patterns
-    const sumKeys = (...patterns) => {
-      let total = 0
-      for (const [k, v] of Object.entries(cb)) {
-        const norm = k.toLowerCase().replace(/[\s_-]/g, '')
-        if (patterns.some(p => norm === p.toLowerCase().replace(/[\s_-]/g, ''))) {
-          total += v || 0
-        }
-      }
-      return total
-    }
-    const ageGroups = {
-      // sumKeys strips spaces/underscores/hyphens before comparing, so the
-      // renamed "PP ONE" / "STANDARD ONE" arrive as ppone / standardone. Both
-      // the old and new spellings are listed so a school on either naming still
-      // populates this chart.
-      neonate:    sumKeys('chekechea', 'ppone', 'pptwo', 'pp1', 'pp2', 'nursery', 'kindergarten'),
-      infant:     sumKeys('standardone', 'standardtwo', 'standardthree',
-                          'std1', 'std2', 'std3', 'darasa1', 'darasa2', 'darasa3'),
-      child:      sumKeys('standardfour', 'standardfive', 'standardsix', 'standardseven',
-                          'std4', 'std5', 'std6', 'std7', 'darasa4', 'darasa5', 'darasa6', 'darasa7'),
-      adolescent: sumKeys('form1', 'form2', 'kidato1', 'kidato2'),
-      adult:      sumKeys('form3', 'form4', 'kidato3', 'kidato4'),
-      elderly:    sumKeys('form5', 'form6', 'kidato5', 'kidato6'),
-    }
-
-    return {
-      gender: {
-        male:      methods['cash']   || 0,
-        female:    methods['mpesa']  || 0,
-        no_gender: methods['bank']   || 0,
-        unknown:   methods['cheque'] || 0,
-      },
-      visit_type: {
-        new:      s.paid_invoices   || 0,
-        followup: (s.unpaid_invoices || 0) + (s.partial_invoices || 0),
-      },
-      age_groups: ageGroups,
-    }
-  })
-
   // ── Service trend data ────────────────────────────────────────────────────
   // ServiceTrendChart.vue expects Chart.js multi-dataset bar+line structure
   const serviceTrendData = computed(() => {
@@ -397,7 +342,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     offlineTimerCountdown, futureDateWarning, isSyncing,
     // Computed data
     realStats, previousStats, compLabel,
-    pieStats, serviceTrendData, realClinics, referralStats,
+    serviceTrendData, realClinics, referralStats,
     // Legacy stubs
     metrics, clinics,
     // Actions

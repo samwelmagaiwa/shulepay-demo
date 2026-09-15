@@ -56,6 +56,26 @@ const moneyPrefix = (key) => (isLocked.value && LOCKED_KEYS.has(key) ? '' : 'TZS
 
 const showLockModal = ref(false)
 
+const owingInvoiceCount = computed(() => {
+  const st = dashboard.stats || {}
+  return (Number(st.unpaid_invoices) || 0) + (Number(st.partial_invoices) || 0)
+})
+
+const invoiceCounts = computed(() => {
+  const st = dashboard.stats || {}
+  return {
+    paid: Number(st.paid_invoices) || 0,
+    partial: Number(st.partial_invoices) || 0,
+    unpaid: Number(st.unpaid_invoices) || 0,
+  }
+})
+
+const expensesDisplay = computed(() => {
+  if (dashboard.isLocked) return MASK
+  const tzs = Math.round((Number(dashboard.stats?.revenue_vs_expenses?.expenses_cents) || 0) / 100)
+  return 'TZS ' + tzs.toLocaleString()
+})
+
 // ── Students with discount card (formerly "Absent Today") ─────────────────
 const showDiscountList  = ref(false)
 const discountedByClass = ref([])
@@ -149,115 +169,95 @@ const fetchPendingPatients = () => {}
       :gutter="3"
       class="row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3 px-0 mx-0 metrics-row"
     >
-      <!-- Total OPD -->
+      <!-- Total Students (stacked: all students + sponsored sub-item) -->
       <CCol class="metric-col">
         <div
-          class="stat-card premium-shadow shadow-indigo"
+          class="stat-card stat-card--stacked premium-shadow shadow-indigo"
           style="border-left: 4px solid #6366f1; border-top: 1px solid #6366f1"
         >
-          <div class="stat-card-header mb-1">
-            <div class="stat-icon-wrapper" style="background-color: rgba(99, 102, 241, 0.15)">
-              <CIcon :icon="cilPeople" class="stat-icon" style="color: #6366f1" />
-            </div>
-            <div class="stat-main-info">
-              <h3 class="stat-value" style="color: #6366f1">{{ getValue('total_patients') }}</h3>
+          <div class="stat-card-header">
+            <div class="stacked-title-row">
+              <div class="stat-icon-wrapper" style="background-color: rgba(99, 102, 241, 0.15)">
+                <CIcon :icon="cilPeople" class="stat-icon" style="color: #6366f1" />
+              </div>
               <span class="stat-label">{{ t('dashboard.cardTotalStudents') }}</span>
             </div>
-          </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto pt-1"
-          >
-            <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('total_patients') }}</span>
-              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
-            </div>
-          </div>
-        </div>
-      </CCol>
-
-      <!-- Total Emergency -->
-      <CCol class="metric-col">
-        <div
-          class="stat-card premium-shadow shadow-rose"
-          style="
-            border-left: 4px solid #f43f5e;
-            border-top: 1px solid #f43f5e;
-            position: relative;
-            overflow: hidden;
-          "
-        >
-          <div class="stat-card-header mb-1" style="position: relative; z-index: 2">
-            <div
-              class="stat-icon-wrapper"
-              style="background-color: rgba(244, 63, 94, 0.15)"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                class="stat-icon"
-              >
-                <rect x="10" y="2" width="4" height="20" rx="1" fill="#f43f5e" />
-                <rect x="2" y="10" width="20" height="4" rx="1" fill="#f43f5e" />
-              </svg>
-            </div>
             <div class="stat-main-info">
-              <div class="d-flex align-items-center mb-0">
-                <h3 class="stat-value mb-0" style="color: #f43f5e">
-                  {{ moneyPrefix('emergency_visits') }}{{ getValue('emergency_visits') }}
-                </h3>
+              <h3 class="stat-value stacked-amount" style="color: #6366f1">{{ getValue('total_patients') }}</h3>
+              <div class="card-expenses">
+                <span class="card-expenses-label">{{ t('dashboard.cardSponsoredFree') }}</span>
+                <span class="card-expenses-value" style="color: #0ea5e9">{{ getValue('new_visits') }}</span>
               </div>
-              <span class="stat-label">{{ t('dashboard.cardDebt') }}</span>
-            </div>
-            <button
-              type="button"
-              class="stat-print-btn"
-              :title="t('dashboard.printOutstandingDebts', 'Print outstanding debts to Excel')"
-              :disabled="isExportingDebts || isLocked"
-              @click.stop="exportOutstandingDebts"
-            >
-              <span v-if="isExportingDebts" class="spinner-border spinner-border-sm" style="width:0.9rem;height:0.9rem;border-width:2px;"></span>
-              <CIcon v-else :icon="cilPrint" size="sm" style="color:#f43f5e" />
-            </button>
-          </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto pt-1"
-            style="position: relative; z-index: 2"
-          >
-            <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('emergency_visits') }}</span>
-              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
             </div>
           </div>
         </div>
       </CCol>
 
-      <!-- New Visits -->
+      <!-- Total Expenses (was: New Visits/Sponsored) -->
       <CCol class="metric-col">
         <div
-          class="stat-card premium-shadow shadow-sky"
+          class="stat-card stat-card--stacked premium-shadow shadow-sky"
           style="border-left: 4px solid #0ea5e9; border-top: 1px solid #0ea5e9"
         >
-          <div class="stat-card-header mb-1">
-            <div class="stat-icon-wrapper" style="background-color: rgba(14, 165, 233, 0.15)">
-              <CIcon :icon="cilClock" class="stat-icon" style="color: #0ea5e9" />
+          <div class="stat-card-header">
+            <div class="stacked-title-row">
+              <div class="stat-icon-wrapper" style="background-color: rgba(14, 165, 233, 0.15)">
+                <CIcon :icon="cilChartLine" class="stat-icon" style="color: #0ea5e9" />
+              </div>
+              <span class="stat-label">{{ t('dashboard.totalExpenses') }}</span>
             </div>
             <div class="stat-main-info">
-              <h3 class="stat-value" style="color: #0ea5e9">{{ getValue('new_visits') }}</h3>
-              <span class="stat-label">{{ t('dashboard.cardSponsoredFree') }}</span>
+              <h3 class="stat-value stacked-amount" style="color: #0ea5e9" :title="expensesDisplay">
+                {{ expensesDisplay }}
+              </h3>
             </div>
           </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto pt-1"
-          >
-            <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('new_visits') }}</span>
-              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
+        </div>
+      </CCol>
+
+      <!-- Outstanding Debt (stacked with invoice breakdown) -->
+      <CCol class="metric-col">
+        <div
+          class="stat-card stat-card--stacked premium-shadow shadow-rose"
+          style="border-left: 4px solid #f43f5e; border-top: 1px solid #f43f5e"
+        >
+          <div class="stat-card-header">
+            <div class="stacked-title-row">
+              <div class="stat-icon-wrapper" style="background-color: rgba(244, 63, 94, 0.15)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                     xmlns="http://www.w3.org/2000/svg" class="stat-icon">
+                  <rect x="10" y="2" width="4" height="20" rx="1" fill="#f43f5e" />
+                  <rect x="2" y="10" width="20" height="4" rx="1" fill="#f43f5e" />
+                </svg>
+              </div>
+              <span class="stat-label">{{ t('dashboard.cardDebt') }}</span>
+              <button
+                type="button"
+                class="stat-print-btn"
+                :title="t('dashboard.printOutstandingDebts', 'Print outstanding debts to Excel')"
+                :disabled="isExportingDebts || isLocked"
+                @click.stop="exportOutstandingDebts"
+              >
+                <span v-if="isExportingDebts" class="spinner-border spinner-border-sm" style="width:0.9rem;height:0.9rem;border-width:2px;"></span>
+                <CIcon v-else :icon="cilPrint" size="sm" style="color:#f43f5e" />
+              </button>
+            </div>
+            <div class="stat-main-info">
+              <h3
+                class="stat-value stacked-amount stacked-amount--solo"
+                style="color: #f43f5e"
+                :title="`${moneyPrefix('emergency_visits')}${getValue('emergency_visits')}`"
+              >{{ moneyPrefix('emergency_visits') }}{{ getValue('emergency_visits') }}</h3>
+              <div class="card-expenses">
+                <span class="card-expenses-label">{{ t('dashboard.invoicesOwing') }}</span>
+                <span class="inv-total-row">
+                  <span class="card-expenses-value" style="color: #f43f5e">{{ owingInvoiceCount.toLocaleString() }}</span>
+                  <span class="inv-split">
+                    <span class="inv-chip inv-chip--unpaid">{{ t('dashboard.invUnpaid') }} <b>{{ invoiceCounts.unpaid.toLocaleString() }}</b></span>
+                    <span class="inv-chip inv-chip--partial">{{ t('dashboard.invPartial') }} <b>{{ invoiceCounts.partial.toLocaleString() }}</b></span>
+                  </span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -290,31 +290,39 @@ const fetchPendingPatients = () => {}
         </div>
       </CCol>
 
-      <!-- Total Consulted -->
+      <!-- Total Consulted (stacked: count + amount on separate lines) -->
       <CCol class="metric-col">
         <div
-          class="stat-card premium-shadow shadow-emerald"
+          class="stat-card stat-card--stacked premium-shadow shadow-emerald"
           style="border-left: 4px solid #10b981; border-top: 1px solid #10b981"
         >
-          <div class="stat-card-header mb-1">
-            <div class="stat-icon-wrapper" style="background-color: rgba(16, 185, 129, 0.15)">
-              <CIcon :icon="cilFile" class="stat-icon" style="color: #10b981" />
-            </div>
-            <div class="stat-main-info">
-              <h3 class="stat-value" style="color: #10b981">
-                <template v-if="isLocked">{{ MASK }}</template>
-                <template v-else>{{ getValue('paid_partial_count') }} | TZS {{ getValue('paid_partial_amount') }}</template>
-              </h3>
+          <div class="stat-card-header">
+            <div class="stacked-title-row">
+              <div class="stat-icon-wrapper" style="background-color: rgba(16, 185, 129, 0.15)">
+                <CIcon :icon="cilFile" class="stat-icon" style="color: #10b981" />
+              </div>
               <span class="stat-label">{{ t('dashboard.cardPaidInvoices') }}</span>
             </div>
-          </div>
-          <div
-            v-if="dashboard.compLabel"
-            class="stat-card-footer mt-auto pt-1"
-          >
-            <div class="stat-comparison">
-              <span class="prev-value text-muted">{{ getPrevValue('consulted') }}</span>
-              <span class="prev-label ms-1">{{ dashboard.compLabel }}</span>
+            <div class="stat-main-info">
+              <template v-if="isLocked">
+                <h3 class="stat-value stacked-amount" style="color: #10b981">{{ MASK }}</h3>
+              </template>
+              <template v-else>
+                <span class="inv-total-row">
+                  <span class="paid-count">
+                    {{ getValue('paid_partial_count') }} {{ t('dashboard.invoicesWord') }}
+                  </span>
+                  <span class="inv-split">
+                    <span class="inv-chip inv-chip--full">{{ t('dashboard.invFull') }} <b>{{ invoiceCounts.paid.toLocaleString() }}</b></span>
+                    <span class="inv-chip inv-chip--partial">{{ t('dashboard.invPartial') }} <b>{{ invoiceCounts.partial.toLocaleString() }}</b></span>
+                  </span>
+                </span>
+                <h3
+                  class="stat-value stacked-amount"
+                  style="color: #10b981"
+                  :title="`TZS ${getValue('paid_partial_amount')}`"
+                >TZS {{ getValue('paid_partial_amount') }}</h3>
+              </template>
             </div>
           </div>
         </div>
@@ -450,8 +458,118 @@ const fetchPendingPatients = () => {}
   line-height: 1.2;
 }
 
+.stat-card--stacked {
+  container-type: inline-size;
+}
+.stat-card--stacked .stat-card-header {
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: stretch !important;
+  gap: 0.45rem !important;
+}
+.stat-card--stacked .stat-icon-wrapper {
+  align-self: flex-start;
+}
+.stat-card--stacked .stat-main-info {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  min-width: 0;
+  overflow: hidden;
+}
+.stat-card--stacked .stacked-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.stat-card--stacked .stacked-amount {
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.stat-card--stacked .stat-value {
+  font-size: clamp(1rem, 11cqi, 1.6rem);
+  word-break: normal;
+  overflow-wrap: normal;
+}
+.stat-card--stacked .paid-count {
+  font-size: clamp(0.95rem, 8cqi, 1.2rem);
+  font-weight: 800;
+  color: #047857;
+  line-height: 1.2;
+}
+.stat-card--stacked .paid-count + .stacked-amount {
+  font-size: clamp(0.9rem, 9.5cqi, 1.5rem);
+}
+.stat-card--stacked .stacked-amount--solo {
+  font-size: clamp(0.9rem, 9.5cqi, 1.5rem);
+}
+.stat-card--stacked .stacked-title-row .stat-print-btn {
+  margin-left: auto;
+  align-self: center;
+}
+.inv-total-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.45rem;
+  min-width: 0;
+}
+.inv-split {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.inv-chip {
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.inv-chip b { font-weight: 800; }
+.inv-chip--unpaid  { background: rgba(244, 63, 94, 0.12);  color: #be123c; }
+.inv-chip--partial { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+.inv-chip--full    { background: rgba(16, 185, 129, 0.14); color: #047857; }
+.card-expenses {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.4rem;
+  padding: 0.35rem 0;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  line-height: 1.2;
+}
+.card-expenses-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.card-expenses-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #d97706;
+  white-space: nowrap;
+}
+.stat-card--stacked .card-expenses-value {
+  font-size: clamp(0.95rem, 9cqi, 1.3rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-card--stacked .card-expenses {
+  min-width: 0;
+}
+.stat-card--stacked .stat-label {
+  margin: 0;
+}
+
 .prev-value {
-  font-size: 0.9rem; /* Increased from 0.85rem */
+  font-size: 0.9rem;
   font-weight: 700;
 }
 

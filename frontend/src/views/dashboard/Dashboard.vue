@@ -2,6 +2,7 @@
 import { defineAsyncComponent, computed, ref, onMounted, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
+import { useSchoolStore } from '@/stores/school'
 import { getAutoScrollState } from '@/composables/useAutoScroll'
 import LoadingBanner from '@/components/LoadingBanner.vue'
 import { MASK } from '@/utils/maskedValue'
@@ -20,6 +21,7 @@ import {
 
 const { t } = useI18n()
 const dashboard = useDashboardStore()
+const schoolStore = useSchoolStore()
 const autoScroll = getAutoScrollState()
 
 import { ChartLine, ChartBar } from '../charts/index.js'
@@ -28,6 +30,7 @@ import VueDatePicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 
 import DashboardPieCharts from './DashboardPieCharts.vue'
+import UnassignedFeesModal from '@/components/UnassignedFeesModal.vue'
 import WidgetsStatsD from '../widgets/SocialStatsWidgets.vue'
 import DashboardRadarChart from './DashboardRadarChart.vue'
 import DashboardClinicBarChart from './DashboardClinicBarChart.vue'
@@ -36,7 +39,8 @@ import ServiceTrendChart from './ServiceTrendChart.vue'
 const MainChart = defineAsyncComponent(() => import('./MainChart.vue'))
 
 const isAutoScrollEnabled = computed(() => autoScroll.isEnabled.value)
-const hiddenPieCategories = ref([]) // Track hidden categories for pie chart
+const hiddenPieCategories = ref([])
+const showUnassigned = ref(false)
 // Show outage slideshow ONLY when API is unreachable AND grace period has completely expired
 const showOutageSlideshow = computed(
   () => {
@@ -136,83 +140,68 @@ const getCategoryIcon = (title) => {
   return cilPeople
 }
 
-// Maps display title → backend class_breakdown key(s) from DashboardService
-// Keys are: strtolower(str_replace(' ', '_', class_name))
-// e.g. "Darasa la 1" → "darasa_la_1", "PP 1" → "pp_1", "Kidato la 1" → "kidato_la_1"
-// Production secondary classes are spelled out ("FORM ONE".."FORM FOUR") rather
-// than numbered, so both forms need covering — form_4/form4 AND form_four.
-const CLASS_KEY_MAP = {
-  // Primary classes were renamed to "PP ONE" / "STANDARD ONE", which normalise
-  // to pp_one / standard_one. The former darasa_la_N keys stay listed: a key
-  // that no longer matches anything simply contributes 0, whereas a missing one
-  // makes the class read as TZS 0 on a school still using the old names.
-  'PP1':    ['pp_one', 'pp_1', 'pp1'],
-  'PP2':    ['pp_two', 'pp_2', 'pp2'],
-  'STD 1':  ['standard_one', 'darasa_la_1', 'std_1', 'std1'],
-  'STD 2':  ['standard_two', 'darasa_la_2', 'std_2', 'std2'],
-  'STD 3':  ['standard_three', 'darasa_la_3', 'std_3', 'std3'],
-  'STD 4':  ['standard_four', 'darasa_la_4', 'std_4', 'std4'],
-  'STD 5':  ['standard_five', 'darasa_la_5', 'std_5', 'std5'],
-  'STD 6':  ['standard_six', 'darasa_la_6', 'std_6', 'std6'],
-  'STD 7':  ['standard_seven', 'darasa_la_7', 'std_7', 'std7'],
-  'FORM 1': ['kidato_la_1', 'form_1', 'form1', 'form_one'],
-  'FORM 2': ['kidato_la_2', 'form_2', 'form2', 'form_two'],
-  'FORM 3': ['kidato_la_3', 'form_3', 'form3', 'form_three'],
-  'FORM 4': ['kidato_la_4', 'form_4', 'form4', 'form_four'],
-}
+// Per-class fees and headcounts from class_fee_collection: the selected
+// school's real classes, by name, in its own order.
+const CLASS_COLOURS = [
+  '#007bff', '#17a2b8', '#28a745', '#20c997', '#ffc107', '#fd7e14', '#dc3545',
+  '#e83e8c', '#6f42c1', '#6610f2', '#003082', '#007f3e', '#fcd116',
+]
+
+const classFeeCollection = computed(() => dashboard.stats?.class_fee_collection || null)
 
 const patientCategories = computed(() => {
-  const colors = {
-    'PP1':    '#007bff',
-    'PP2':    '#17a2b8',
-    'STD 1':  '#28a745',
-    'STD 2':  '#20c997',
-    'STD 3':  '#ffc107',
-    'STD 4':  '#fd7e14',
-    'STD 5':  '#dc3545',
-    'STD 6':  '#e83e8c',
-    'STD 7':  '#6f42c1',
-    'FORM 1': '#6610f2',
-    'FORM 2': '#003082',
-    'FORM 3': '#007f3e',
-    'FORM 4': '#fcd116',
-  }
-
-  // Fee amounts collected per class (cents), not student headcounts —
-  // class_breakdown counts enrollments, which is a different metric.
-  const cb = dashboard.stats?.class_fee_breakdown_cents || {}
-
-  // While the dashboard is locked the backend sends no class breakdown at all,
-  // so every tile would compute to "TZS 0" — which reads as a real figure. Show
-  // the mask instead. numericValue stays 0 so the charts below simply draw flat
-  // rather than erroring.
   const locked = dashboard.isLocked
+  const rows = classFeeCollection.value?.classes || []
 
-  const cats = Object.keys(CLASS_KEY_MAP).map((title) => {
-    // Look up real data from class_fee_breakdown_cents using all possible key variants
-    const keys = CLASS_KEY_MAP[title]
-    const totalCents = keys.reduce((sum, k) => sum + (cb[k] || 0), 0)
-    const amount = Math.round(totalCents / 100)
-
+  const cats = rows.map((row, i) => {
+    const amount = Math.round((row.collected_cents || 0) / 100)
     return {
-      title,
+      title: row.class_name,
       value: locked ? MASK : 'TZS ' + amount.toLocaleString(),
-      color: colors[title] || '#6c757d',
+      color: CLASS_COLOURS[i % CLASS_COLOURS.length],
       numericValue: locked ? 0 : amount,
+      students: row.students || 0,
     }
   })
 
-  const totalSum = cats.reduce((acc, c) => acc + c.numericValue, 0)
+  const total = Math.round((classFeeCollection.value?.total_cents || 0) / 100)
+
+  const unassigned = Math.round((classFeeCollection.value?.unassigned_cents || 0) / 100)
+  const extra = unassigned > 0
+    ? [{
+        title: t('dashboard.unassignedFees'),
+        value: locked ? MASK : 'TZS ' + unassigned.toLocaleString(),
+        color: '#6c757d',
+        numericValue: locked ? 0 : unassigned,
+        unassigned: true,
+      }]
+    : []
 
   return [
     ...cats,
-    { title: 'Total', value: locked ? MASK : 'TZS ' + totalSum.toLocaleString(), color: 'grey' },
+    ...extra,
+    { title: 'Total', value: locked ? MASK : 'TZS ' + total.toLocaleString(), color: 'grey' },
   ]
 })
+// Full shilling figures (23,948,000) overlap on a bar and crowd an axis; these
+// labels use compact form (23.9M) while tooltips keep the exact amount.
+const compactTzs = (v) => {
+  const n = Number(v) || 0
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K'
+  return String(n)
+}
+
+const feeChartState = computed(() => {
+  if (dashboard.isLocked) return 'locked'
+  const any = patientCategories.value.some((c) => c.title !== 'Total' && !c.unassigned && c.numericValue > 0)
+  return any ? 'ready' : 'empty'
+})
+
 // Patient Category Chart Data (Bar + Line combination)
 const categoryChartData = computed(() => {
-  const categories = patientCategories.value.filter((c) => c.title !== 'Total')
-  const values = categories.map((c) => parseInt(c.value.replace(/,/g, '')) || 0)
+  const categories = patientCategories.value.filter((c) => c.title !== 'Total' && !c.unassigned)
+  const values = categories.map((c) => c.numericValue || 0)
   const colors = categories.map((c) => c.color)
 
   return {
@@ -220,7 +209,7 @@ const categoryChartData = computed(() => {
     datasets: [
       {
         type: 'bar',
-        label: t('dashboard.seriesStudentCount'),
+        label: t('dashboard.seriesFeesCollected'),
         backgroundColor: colors,
         borderColor: colors.map((c) => c),
         borderWidth: 1,
@@ -251,16 +240,6 @@ const categoryChartData = computed(() => {
 })
 
 const categoryChartOptions = computed(() => {
-  const categories = patientCategories.value.filter((c) => c.title !== 'Total')
-  const values = categories.map((c) => parseInt(c.value.replace(/,/g, '')) || 0)
-  const maxValue = Math.max(...values, 1)
-  const yMax =
-    maxValue > 1000
-      ? Math.ceil(maxValue / 1000) * 1000 * 1.5
-      : maxValue > 100
-        ? Math.ceil(maxValue / 100) * 100 * 1.5
-        : Math.ceil(maxValue / 10) * 10 * 1.5
-
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -281,7 +260,7 @@ const categoryChartOptions = computed(() => {
         callbacks: {
           label: (context) => {
             const value = context.raw || 0
-            return `${context.dataset.label}: ${value.toLocaleString()}`
+            return `${context.dataset.label}: TZS ${value.toLocaleString()}`
           },
         },
       },
@@ -297,12 +276,11 @@ const categoryChartOptions = computed(() => {
         },
       },
       y: {
-        type: 'logarithmic',
-        min: 1,
-        max: yMax,
+        type: 'linear',
+        beginAtZero: true,
         title: {
           display: true,
-          text: t('dashboard.yAxisTotalLog'),
+          text: t('dashboard.yAxisCollected'),
           font: { size: 12, weight: 'bold' },
           color: '#333',
         },
@@ -311,13 +289,7 @@ const categoryChartOptions = computed(() => {
           color: 'rgba(0, 0, 0, 0.1)',
         },
         ticks: {
-          callback: (value) => {
-            const remain = value / Math.pow(10, Math.floor(Math.log10(value)))
-            if (remain === 1 || remain === 2 || remain === 5) {
-              return value.toLocaleString()
-            }
-            return ''
-          },
+          callback: (value) => compactTzs(value),
         },
       },
     },
@@ -337,11 +309,11 @@ const categoryBarLabelsPlugin = {
       if (value === 0) return
 
       const { x, y } = bar.tooltipPosition()
-      const displayValue = new Intl.NumberFormat('en-US').format(value)
+      const displayValue = compactTzs(value)
       const barColor = chart.data.datasets[0].backgroundColor[index]
 
       ctx.save()
-      ctx.font = "bold 26px 'Outfit', Arial, sans-serif"
+      ctx.font = "bold 16px 'Outfit', Arial, sans-serif"
       ctx.fillStyle = barColor
       ctx.textAlign = 'center'
       ctx.textBaseline = 'bottom'
@@ -355,10 +327,10 @@ const categoryBarLabelsPlugin = {
 
 // Patient Category Pie Chart Data
 const categoryPieChartData = computed(() => {
-  const categories = patientCategories.value.filter((c) => c.title !== 'Total')
+  const categories = patientCategories.value.filter((c) => c.title !== 'Total' && !c.unassigned)
   const values = categories.map((c) => {
     if (hiddenPieCategories.value.includes(c.title)) return 0
-    return parseInt(c.value.replace(/,/g, '')) || 0
+    return c.numericValue || 0
   })
   const colors = categories.map((c) => c.color)
 
@@ -435,7 +407,7 @@ const categoryPieLabelsPlugin = {
       const angleSpan = ((element.endAngle - element.startAngle) * 180) / Math.PI
       const sliceColor = chart.data.datasets[0].backgroundColor[index]
 
-      if (angleSpan >= 15) {
+      if (angleSpan >= 32) {
         const midRadius = element.outerRadius * 0.6 + element.innerRadius * 0.1
         const x = Math.cos(midAngle) * midRadius + element.x
         const y = Math.sin(midAngle) * midRadius + element.y
@@ -444,8 +416,8 @@ const categoryPieLabelsPlugin = {
         ctx.textBaseline = 'middle'
         ctx.shadowColor = 'rgba(0,0,0,0.9)'
         ctx.shadowBlur = 5
-        ctx.font = "bold 22px 'Outfit', sans-serif"
-        ctx.fillText(value.toLocaleString(), x, y - 10)
+        ctx.font = "bold 20px 'Outfit', sans-serif"
+        ctx.fillText(compactTzs(value), x, y - 10)
         ctx.font = "normal 14px 'Outfit', sans-serif"
         ctx.fillText(percentage, x, y + 14)
       } else {
@@ -472,7 +444,7 @@ const categoryPieLabelsPlugin = {
         ctx.textBaseline = 'middle'
         ctx.font = "bold 13px 'Outfit', sans-serif"
         const labelX = x3 + (isRight ? 3 : -3)
-        ctx.fillText(`${value.toLocaleString()} (${percentage})`, labelX, y3)
+        ctx.fillText(`${compactTzs(value)} (${percentage})`, labelX, y3)
       }
     })
     ctx.restore()
@@ -550,7 +522,9 @@ const formatDate = (dateStr) => {
               {{ t('dashboard.classSummaryTitle') }}
             </h4>
           </div>
-          <span class="badge bg-light text-dark border fw-normal">{{ t('dashboard.primarySecondary') }}</span>
+          <span class="badge bg-light text-dark border fw-normal">
+            {{ schoolStore.activeSchool?.name || t('dashboard.primarySecondary') }}
+          </span>
         </div>
         <div class="card-body p-3">
           <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-xl-7 g-3">
@@ -559,7 +533,11 @@ const formatDate = (dateStr) => {
               :key="index"
               class="col"
             >
-              <div class="p-3 border rounded h-100 d-flex flex-column align-items-center justify-content-between text-center bg-white shadow-sm hover-lift">
+              <div
+                class="p-3 border rounded h-100 d-flex flex-column align-items-center justify-content-between text-center bg-white shadow-sm hover-lift"
+                :class="{ 'cursor-pointer': item.unassigned }"
+                @click="item.unassigned ? (showUnassigned = true) : null"
+              >
                 <span
                   class="text-uppercase fw-bold mb-1"
                   :style="{ color: item.color, fontSize: '0.8rem', letterSpacing: '0.5px' }"
@@ -611,7 +589,11 @@ const formatDate = (dateStr) => {
               </h5>
             </div>
             <div class="card-body p-0">
-              <div class="chart-container" style="height: 420px">
+              <div v-if="feeChartState !== 'ready'"
+                   class="d-flex align-items-center justify-content-center text-muted" style="height: 420px">
+                <p class="mb-0">{{ feeChartState === 'locked' ? '🔒 ' + t('dashboardLock.locked') : t('dashboard.noFeesCollected') }}</p>
+              </div>
+              <div v-else class="chart-container" style="height: 420px">
                 <CChart
                   type="bar"
                   :data="categoryChartData"
@@ -632,7 +614,7 @@ const formatDate = (dateStr) => {
               </h5>
               <div class="d-flex flex-wrap justify-content-start mt-2 gap-2">
                 <span
-                  v-for="(item, index) in patientCategories.filter((c) => c.title !== 'Total')"
+                  v-for="(item, index) in patientCategories.filter((c) => c.title !== 'Total' && !c.unassigned)"
                   :key="index"
                   class="category-pill clickable-pill"
                   :class="{ 'pill-hidden': isCategoryHidden(item.title) }"
@@ -651,7 +633,11 @@ const formatDate = (dateStr) => {
               </div>
             </div>
             <div class="card-body p-0">
-              <div class="chart-container" style="height: 420px; margin-top: -10px">
+              <div v-if="feeChartState !== 'ready'"
+                   class="d-flex align-items-center justify-content-center text-muted" style="height: 420px">
+                <p class="mb-0">{{ feeChartState === 'locked' ? '🔒 ' + t('dashboardLock.locked') : t('dashboard.noFeesCollected') }}</p>
+              </div>
+              <div v-else class="chart-container" style="height: 420px; margin-top: -10px">
                 <CChartPie
                   :data="categoryPieChartData"
                   :options="categoryPieChartOptions"
@@ -676,6 +662,8 @@ const formatDate = (dateStr) => {
       </div>
     </template>
   </div>
+
+  <UnassignedFeesModal v-model:visible="showUnassigned" />
 </template>
 
 <style scoped>
@@ -764,6 +752,10 @@ const formatDate = (dateStr) => {
 
 .chart-container {
   padding: 15px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 
 @media (max-width: 991.98px) {
