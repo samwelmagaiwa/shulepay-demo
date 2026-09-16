@@ -11,7 +11,6 @@ use App\Models\Student;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
-
 class DashboardService
 {
     public function stats(?int $schoolId): array
