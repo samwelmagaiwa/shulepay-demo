@@ -733,14 +733,14 @@ onUnmounted(() => {
 /* body rows — alternating stripe */
 .wl-table tbody tr {
   cursor: pointer;
-  border-bottom: 1px solid #e4e8ed;
+  border-bottom: 1px solid #dde3ea;
   background: #ffffff;
 }
 .wl-table tbody tr:nth-child(even) {
-  background: #f0f4f8;
+  background: #e8f0fb;
 }
 .wl-table tbody tr:hover {
-  background: #dbeafe !important;
+  background: #cce0ff !important;
 }
 .wl-table tbody tr.wl-row--selected {
   background: #0969da !important;
@@ -762,7 +762,7 @@ onUnmounted(() => {
   cursor: default;
   height: 22px;
 }
-.wl-row--filler:hover { background: #ffffff !important; }
+.wl-row--filler:hover { background: inherit !important; }
 
 .wl-table td {
   padding: 3px 8px;
