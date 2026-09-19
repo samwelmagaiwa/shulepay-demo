@@ -717,12 +717,12 @@ onUnmounted(() => {
   border-bottom: 2px solid #d0d7de;
   white-space: nowrap;
   text-align: left;
-  background: #f6f8fa !important;
+  background: #1a56db !important;
   cursor: pointer;
   user-select: none;
 }
 .wl-table th:last-child { border-right: none; }
-.wl-table th:hover { background: #eaeef2 !important; }
+.wl-table th:hover { background: #1648c0 !important; }
 
 .wl-sort {
   color: rgba(255,255,255,0.7);
