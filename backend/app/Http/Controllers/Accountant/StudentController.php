@@ -82,7 +82,6 @@ class StudentController extends Controller
                 GROUP BY invoice_id
             ) p ON p.invoice_id = i.id
             WHERE i.student_id = students.id
-            AND i.deleted_at IS NULL
             AND i.status IN ('unpaid', 'partial')
         ) AS outstanding_balance_cents"));
 
