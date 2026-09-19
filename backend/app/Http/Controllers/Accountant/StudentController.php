@@ -72,7 +72,7 @@ class StudentController extends Controller
             'currentEnrollment.schoolClass',
             'currentEnrollment.school',
             'guardians',
-        ])->addSelect(\Illuminate\Support\Facades\DB::raw("(
+        ])->addSelect(DB::raw("(
             SELECT COALESCE(SUM(i.total_amount_cents - COALESCE(p.paid_sum, 0)), 0)
             FROM invoices i
             LEFT JOIN (
