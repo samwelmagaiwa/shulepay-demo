@@ -1,5 +1,5 @@
 <template>
-  <div class="wl-shell">
+  <div class="wl-shell" @click="onShellClick">
 
     <!-- ── Toolbar ── -->
     <div class="wl-toolbar">
@@ -45,6 +45,23 @@
       </div>
     </div>
 
+    <!-- ── Action bar ── -->
+    <div class="wl-actionbar">
+      <button class="wl-act" :disabled="!selectedStudent" @click="selectedStudent && openDetail(selectedStudent)">
+        <span class="wl-act-icon">&#9679;</span> {{ t('common.view') }}
+      </button>
+      <button class="wl-act" :disabled="!selectedStudent" @click="selectedStudent && openEdit(selectedStudent)">
+        <span class="wl-act-icon">&#9998;</span> {{ t('common.edit') }}
+      </button>
+      <button class="wl-act" :disabled="!selectedStudent" @click="selectedStudent && goRecordPromise(selectedStudent)">
+        <span class="wl-act-icon">&#9679;</span> {{ t('students.summary.recordPromise') }}
+      </button>
+      <button class="wl-act wl-act--danger" :disabled="!selectedStudent" @click="selectedStudent && confirmDelete(selectedStudent)">
+        <span class="wl-act-icon">&#9635;</span> {{ t('common.delete') }}
+      </button>
+      <span class="wl-hint">{{ t('students.dblClickHint', 'Double-click a row to open · right-click for actions') }}</span>
+    </div>
+
     <!-- ── Grid table ── -->
     <div class="wl-table-wrap">
       <div v-if="studentsStore.loading" class="wl-loading">
@@ -52,124 +69,171 @@
       </div>
 
       <table v-else class="wl-table">
+        <colgroup>
+          <col style="width:170px"><!-- Full Name -->
+          <col style="width:95px"> <!-- Admission -->
+          <col style="width:88px"> <!-- DOB -->
+          <col style="width:70px"> <!-- Class -->
+          <col style="width:120px"><!-- School -->
+          <col style="width:60px"> <!-- Gender -->
+          <col style="width:90px"> <!-- Sponsorship -->
+          <col style="width:85px"> <!-- Admitted -->
+          <col style="width:100px"><!-- Outstanding -->
+          <col style="width:76px"> <!-- Status -->
+        </colgroup>
         <thead>
           <tr>
-            <th>{{ t('students.admission') }}</th>
-            <th>{{ t('students.fullName') }}</th>
-            <th>{{ t('common.class') }}</th>
-            <th>{{ t('students.gender') }}</th>
+            <th @click="toggleSort('full_name')">
+              {{ t('students.fullName') }}<span class="wl-sort">{{ sortIcon('full_name') }}</span>
+            </th>
+            <th @click="toggleSort('admission_number')">
+              {{ t('students.admission') }}<span class="wl-sort">{{ sortIcon('admission_number') }}</span>
+            </th>
+            <th @click="toggleSort('date_of_birth')">
+              {{ t('students.dob', 'DOB') }}<span class="wl-sort">{{ sortIcon('date_of_birth') }}</span>
+            </th>
+            <th @click="toggleSort('school_class')">
+              {{ t('common.class') }}<span class="wl-sort">{{ sortIcon('school_class') }}</span>
+            </th>
+            <th @click="toggleSort('school')">
+              {{ t('common.school', 'School') }}<span class="wl-sort">{{ sortIcon('school') }}</span>
+            </th>
+            <th @click="toggleSort('gender')">
+              {{ t('students.gender') }}<span class="wl-sort">{{ sortIcon('gender') }}</span>
+            </th>
+            <th @click="toggleSort('sponsorship_type')">
+              {{ t('students.sponsorship', 'Sponsorship') }}<span class="wl-sort">{{ sortIcon('sponsorship_type') }}</span>
+            </th>
+            <th @click="toggleSort('admitted_at')">
+              {{ t('students.admitted', 'Admitted') }}<span class="wl-sort">{{ sortIcon('admitted_at') }}</span>
+            </th>
+            <th @click="toggleSort('outstanding_balance_cents')">
+              {{ t('students.outstanding', 'Outstanding') }}<span class="wl-sort">{{ sortIcon('outstanding_balance_cents') }}</span>
+            </th>
             <th>{{ t('common.status') }}</th>
-            <th>{{ t('students.debt') }}</th>
-            <th class="wl-col-actions"></th>
           </tr>
         </thead>
         <tbody>
           <tr
-            v-for="s in studentsStore.students"
+            v-for="s in sortedStudents"
             :key="s.id"
             :class="{ 'wl-row--selected': selectedStudent?.id === s.id }"
-            @click="openDetail(s)"
+            @click="selectRow(s)"
+            @dblclick="openDetail(s)"
+            @contextmenu.prevent="openContextMenu($event, s)"
           >
-            <td class="wl-cell--mono">{{ s.admission_number }}</td>
             <td class="wl-cell--name">{{ s.full_name }}</td>
+            <td class="wl-cell--mono">{{ s.admission_number || '—' }}</td>
+            <td>{{ formatDate(s.date_of_birth) }}</td>
             <td>{{ s.school_class?.name || '—' }}</td>
-            <td>{{ s.gender === 'male' || s.gender === 'me' ? t('students.male') : s.gender === 'female' || s.gender === 'ke' ? t('students.female') : '—' }}</td>
-            <td><StatusBadge :status="s.status" /></td>
+            <td class="wl-cell--school">{{ s.school?.name || '—' }}</td>
+            <td>{{ genderLabel(s.gender) }}</td>
+            <td>{{ sponsorshipLabel(s.sponsorship_type) }}</td>
+            <td>{{ formatDate(s.admitted_at) }}</td>
             <td>
-              <span v-if="!s.outstanding_balance_cents || s.outstanding_balance_cents <= 0" class="wl-paid">✓ Amelipa</span>
+              <span v-if="!s.outstanding_balance_cents || s.outstanding_balance_cents <= 0" class="wl-paid">Paid up</span>
               <span v-else class="wl-debt">{{ formatMoney(s.outstanding_balance_cents) }}</span>
             </td>
-            <td class="wl-col-actions" style="position:relative;">
-              <button class="wl-btn-icon" @click.stop="activeRow = activeRow === s.id ? null : s.id">⋯</button>
-              <div v-if="activeRow === s.id" class="wl-dropdown" @click.stop>
-                <button @click="openDetail(s); activeRow = null">👁️ {{ t('common.view') }}</button>
-                <button @click="openEdit(s); activeRow = null">✏️ {{ t('common.edit') }}</button>
-                <button @click="router.push({ name: 'MwanafunziDetail', params: { id: s.id }, query: { tab: 'ahadi' } }); activeRow = null">🤝 {{ t('students.summary.recordPromise') }}</button>
-                <button class="wl-dropdown--danger" @click="confirmDelete(s); activeRow = null">🗑️ {{ t('common.delete') }}</button>
-              </div>
-            </td>
+            <td><StatusBadge :status="s.status" /></td>
+          </tr>
+          <!-- filler rows to fill remaining space -->
+          <tr v-for="n in fillerRows" :key="'filler-' + n" class="wl-row--filler" aria-hidden="true">
+            <td colspan="10"></td>
           </tr>
           <tr v-if="!studentsStore.loading && studentsStore.students.length === 0">
-            <td colspan="7" class="wl-empty">{{ t('students.noStudents') }}</td>
+            <td colspan="10" class="wl-empty">{{ t('students.noStudents') }}</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <!-- ── Pagination ── -->
-    <div v-if="meta.last_page > 1" class="wl-pagination">
-      <button :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; fetchData()">‹</button>
+    <div class="wl-pagination">
+      <button :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; fetchData()">
+        ‹ Previous
+      </button>
       <button
         v-for="p in visiblePages" :key="p"
         :class="{ 'wl-page--active': p === meta.current_page }"
         @click="page = p; fetchData()"
       >{{ p }}</button>
-      <button :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; fetchData()">›</button>
+      <button :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; fetchData()">
+        Next ›
+      </button>
     </div>
-
 
   </div><!-- /wl-shell -->
 
+  <!-- Context menu -->
+  <div
+    v-if="contextMenu.visible"
+    class="wl-ctx"
+    :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
+    @click.stop
+  >
+    <button @click="openDetail(contextMenu.student); contextMenu.visible = false">👁 {{ t('common.view') }}</button>
+    <button @click="openEdit(contextMenu.student); contextMenu.visible = false">✏️ {{ t('common.edit') }}</button>
+    <button @click="goRecordPromise(contextMenu.student); contextMenu.visible = false">🤝 {{ t('students.summary.recordPromise') }}</button>
+    <button class="wl-ctx--danger" @click="confirmDelete(contextMenu.student); contextMenu.visible = false">🗑️ {{ t('common.delete') }}</button>
+  </div>
+
   <!-- Student Detail Drawer -->
-  <MwanafunziDrawer v-if="selectedStudent" :student="selectedStudent" @close="selectedStudent = null" />
+  <MwanafunziDrawer v-if="drawerStudent" :student="drawerStudent" @close="drawerStudent = null" />
 
-    <!-- Invoices left behind by the student just deleted. -->
-    <OrphanedInvoicesModal v-model:visible="showOrphanModal" />
+  <!-- Invoices left behind by the student just deleted. -->
+  <OrphanedInvoicesModal v-model:visible="showOrphanModal" />
 
-    <!-- Delete Confirm -->
-    <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="lg" class="modal-fullscreen-sm-down">
-      <CModalHeader><CModalTitle>{{ t('students.deleteTitle') }}</CModalTitle></CModalHeader>
-      <CModalBody>
-        <p class="mb-2">{{ t('students.confirmDeleteMsg', { name: deleteTarget?.full_name }) }}</p>
+  <!-- Delete Confirm -->
+  <CModal :visible="showDeleteModal" @close="showDeleteModal = false" size="lg" class="modal-fullscreen-sm-down">
+    <CModalHeader><CModalTitle>{{ t('students.deleteTitle') }}</CModalTitle></CModalHeader>
+    <CModalBody>
+      <p class="mb-2">{{ t('students.confirmDeleteMsg', { name: deleteTarget?.full_name }) }}</p>
 
-        <div v-if="previewLoading" class="text-center py-3">
-          <CSpinner size="sm" />
-        </div>
+      <div v-if="previewLoading" class="text-center py-3">
+        <CSpinner size="sm" />
+      </div>
 
-        <!-- What the deletion leaves behind. Invoices are no longer destroyed
-             with the student, so this is a statement of what survives, not a
-             warning that it is about to be lost. -->
-        <template v-else-if="preview && preview.invoice_count">
-          <CTable small responsive class="mb-2" style="font-size:.82rem;">
-            <CTableHead class="table-light">
-              <CTableRow>
-                <CTableHeaderCell>{{ t('students.invoiceNoColumn') }}</CTableHeaderCell>
-                <CTableHeaderCell>{{ t('common.term') }}</CTableHeaderCell>
-                <CTableHeaderCell class="text-end">{{ t('students.billedColumn') }}</CTableHeaderCell>
-                <CTableHeaderCell class="text-end">{{ t('students.paidColumn') }}</CTableHeaderCell>
-              </CTableRow>
-            </CTableHead>
-            <CTableBody>
-              <CTableRow v-for="inv in preview.invoices" :key="inv.id">
-                <CTableDataCell>{{ inv.invoice_number }}</CTableDataCell>
-                <CTableDataCell>{{ inv.term }}</CTableDataCell>
-                <CTableDataCell class="text-end">{{ fmtCents(inv.total_cents) }}</CTableDataCell>
-                <CTableDataCell class="text-end text-success">{{ fmtCents(inv.paid_cents) }}</CTableDataCell>
-              </CTableRow>
-            </CTableBody>
-          </CTable>
+      <template v-else-if="preview && preview.invoice_count">
+        <CTable small responsive class="mb-2" style="font-size:.82rem;">
+          <CTableHead class="table-light">
+            <CTableRow>
+              <CTableHeaderCell>{{ t('students.invoiceNoColumn') }}</CTableHeaderCell>
+              <CTableHeaderCell>{{ t('common.term') }}</CTableHeaderCell>
+              <CTableHeaderCell class="text-end">{{ t('students.billedColumn') }}</CTableHeaderCell>
+              <CTableHeaderCell class="text-end">{{ t('students.paidColumn') }}</CTableHeaderCell>
+            </CTableRow>
+          </CTableHead>
+          <CTableBody>
+            <CTableRow v-for="inv in preview.invoices" :key="inv.id">
+              <CTableDataCell>{{ inv.invoice_number }}</CTableDataCell>
+              <CTableDataCell>{{ inv.term }}</CTableDataCell>
+              <CTableDataCell class="text-end">{{ fmtCents(inv.total_cents) }}</CTableDataCell>
+              <CTableDataCell class="text-end text-success">{{ fmtCents(inv.paid_cents) }}</CTableDataCell>
+            </CTableRow>
+          </CTableBody>
+        </CTable>
 
-          <CAlert :color="preview.total_paid_cents > 0 ? 'warning' : 'info'" class="py-2 mb-0 small">
-            {{ t('students.deleteKeepsInvoices', {
-              invoices: preview.invoice_count,
-              billed: fmtCents(preview.total_billed_cents),
-              payments: preview.payment_count,
-              paid: fmtCents(preview.total_paid_cents),
-            }) }}
-          </CAlert>
-        </template>
-
-        <CAlert v-else-if="preview" color="info" class="py-2 mb-0 small">
-          {{ t('students.deleteNoInvoices') }}
+        <CAlert :color="preview.total_paid_cents > 0 ? 'warning' : 'info'" class="py-2 mb-0 small">
+          {{ t('students.deleteKeepsInvoices', {
+            invoices: preview.invoice_count,
+            billed: fmtCents(preview.total_billed_cents),
+            payments: preview.payment_count,
+            paid: fmtCents(preview.total_paid_cents),
+          }) }}
         </CAlert>
-      </CModalBody>
-      <CModalFooter class="gap-2">
-        <CButton color="secondary" @click="showDeleteModal = false" style="min-height:44px;">{{ t('common.cancel') }}</CButton>
-        <CButton color="danger" :disabled="deleting" @click="doDelete" style="min-height:44px;">
-          <CSpinner v-if="deleting" size="sm" class="me-1" />{{ t('common.delete') }}
-        </CButton>
-      </CModalFooter>
-    </CModal>
+      </template>
+
+      <CAlert v-else-if="preview" color="info" class="py-2 mb-0 small">
+        {{ t('students.deleteNoInvoices') }}
+      </CAlert>
+    </CModalBody>
+    <CModalFooter class="gap-2">
+      <CButton color="secondary" @click="showDeleteModal = false" style="min-height:44px;">{{ t('common.cancel') }}</CButton>
+      <CButton color="danger" :disabled="deleting" @click="doDelete" style="min-height:44px;">
+        <CSpinner v-if="deleting" size="sm" class="me-1" />{{ t('common.delete') }}
+      </CButton>
+    </CModalFooter>
+  </CModal>
 
   <!-- Add / Edit Student Modal -->
   <AddStudentModal
@@ -186,7 +250,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { CPagination, CPaginationItem, CSpinner } from '@coreui/vue'
+import { CSpinner } from '@coreui/vue'
 import { useStudentsStore } from '@/stores/students'
 import api from '@/services/api'
 import OrphanedInvoicesModal from '@/components/OrphanedInvoicesModal.vue'
@@ -204,10 +268,10 @@ const schoolStore   = useSchoolStore()
 
 const filters        = ref({ search: '', school_id: '', status: '', sponsorship_type: '', has_debt: '' })
 const selectedStudent  = ref(null)
+const drawerStudent    = ref(null)
 const showAddModal     = ref(false)
 const showEditModal    = ref(false)
 const editStudent      = ref(null)
-const activeRow        = ref(null)
 const showDeleteModal  = ref(false)
 const deleteTarget     = ref(null)
 const deleting         = ref(false)
@@ -215,6 +279,47 @@ const page            = ref(1)
 const perPage         = ref('20')
 const meta            = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
 let   debounceTimer   = null
+
+const sortKey = ref('')
+const sortDir = ref('asc')
+
+const contextMenu = ref({ visible: false, x: 0, y: 0, student: null })
+
+const MIN_ROWS = 18
+
+const fillerRows = computed(() => {
+  const count = studentsStore.students.length
+  return count < MIN_ROWS ? MIN_ROWS - count : 0
+})
+
+const sortedStudents = computed(() => {
+  if (!sortKey.value) return studentsStore.students
+  const key = sortKey.value
+  const dir = sortDir.value === 'asc' ? 1 : -1
+  return [...studentsStore.students].sort((a, b) => {
+    let av, bv
+    if (key === 'school_class') { av = a.school_class?.name || ''; bv = b.school_class?.name || '' }
+    else if (key === 'school')  { av = a.school?.name || '';       bv = b.school?.name || '' }
+    else                         { av = a[key] ?? '';               bv = b[key] ?? '' }
+    if (av < bv) return -dir
+    if (av > bv) return dir
+    return 0
+  })
+})
+
+function toggleSort(key) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortDir.value = 'asc'
+  }
+}
+
+function sortIcon(key) {
+  if (sortKey.value !== key) return ' ↕'
+  return sortDir.value === 'asc' ? ' ↑' : ' ↓'
+}
 
 const visiblePages = computed(() => {
   const total = meta.value.last_page
@@ -227,7 +332,6 @@ const visiblePages = computed(() => {
 
 const schools = computed(() => schoolsStore.schools)
 
-// Sync with nav school switcher
 watch(() => schoolStore.activeSchoolId, (id) => {
   filters.value.school_id = id ? String(id) : ''
   page.value = 1
@@ -236,6 +340,27 @@ watch(() => schoolStore.activeSchoolId, (id) => {
 
 function formatMoney(cents) {
   return 'TZS ' + Number(cents / 100).toLocaleString('sw-TZ', { minimumFractionDigits: 0 })
+}
+
+function formatDate(d) {
+  if (!d) return '—'
+  const parts = d.split('-')
+  if (parts.length !== 3) return d
+  return parts[2] + '/' + parts[1] + '/' + parts[0].slice(2)
+}
+
+function genderLabel(g) {
+  if (!g) return '—'
+  const v = g.toLowerCase()
+  if (v === 'male' || v === 'me') return 'Male'
+  if (v === 'female' || v === 'ke') return 'Female'
+  return g
+}
+
+function sponsorshipLabel(s) {
+  if (!s) return '—'
+  const map = { none: 'None', full: 'Full', half: 'Half', full_paid: 'Full Paid' }
+  return map[s] || s
 }
 
 async function fetchData() {
@@ -268,13 +393,30 @@ function resetFilters() {
   fetchData()
 }
 
+function selectRow(student) {
+  selectedStudent.value = selectedStudent.value?.id === student.id ? null : student
+}
+
 function openDetail(student) {
-  selectedStudent.value = student
+  drawerStudent.value = student
 }
 
 function openEdit(student) {
   editStudent.value = student
   showEditModal.value = true
+}
+
+function goRecordPromise(student) {
+  router.push({ name: 'MwanafunziDetail', params: { id: student.id }, query: { tab: 'ahadi' } })
+}
+
+function openContextMenu(event, student) {
+  selectedStudent.value = student
+  contextMenu.value = { visible: true, x: event.clientX, y: event.clientY, student }
+}
+
+function onShellClick() {
+  contextMenu.value.visible = false
 }
 
 const showOrphanModal = ref(false)
@@ -288,14 +430,11 @@ async function confirmDelete(student) {
   preview.value = null
   showDeleteModal.value = true
 
-  // Fetched per open rather than cached: an invoice may have been raised or paid
-  // since the list was loaded, and this is the number the decision rests on.
   previewLoading.value = true
   try {
     const { data } = await api.get(`/students/${student.id}/deletion-preview`)
     preview.value = data
   } catch {
-    // A failed preview must not block the delete — it is context, not a gate.
     preview.value = null
   } finally {
     previewLoading.value = false
@@ -304,17 +443,11 @@ async function confirmDelete(student) {
 
 async function doDelete() {
   deleting.value = true
-  // Captured before the request, because the preview is cleared with the modal
-  // and this decides whether there is anything left to review afterwards.
   const hadInvoices = (preview.value?.invoice_count || 0) > 0
   try {
     await studentsStore.deleteStudent(deleteTarget.value.id)
     showDeleteModal.value = false
     fetchData()
-
-    // The student is gone but their invoices are not. Open the list of invoices
-    // left behind so they can be cleared now, rather than leaving the user to
-    // find the screen later and remember why they wanted it.
     if (hadInvoices) showOrphanModal.value = true
   } catch (e) {
     alert(e?.response?.data?.message || 'Imeshindwa kufuta.')
@@ -323,10 +456,6 @@ async function doDelete() {
   }
 }
 
-// A completed registration refreshes the list but leaves the modal open on its
-// confirmation card. Closing here would put the operator straight back on the
-// list with nothing said, which is the ambiguity that produced duplicate
-// registrations; the modal closes when they acknowledge it.
 function onStudentRegistered() {
   fetchData()
 }
@@ -337,11 +466,12 @@ function onStudentSaved() {
   fetchData()
 }
 
-function onDocClick() { activeRow.value = null }
+function onDocClick() {
+  contextMenu.value.visible = false
+}
 
 onMounted(async () => {
   document.addEventListener('click', onDocClick)
-  // Initialize school_id filter from store
   if (schoolStore.activeSchoolId) {
     filters.value.school_id = String(schoolStore.activeSchoolId)
   }
@@ -432,6 +562,43 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
+/* ── Action bar ── */
+.wl-actionbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa !important;
+  flex-shrink: 0;
+}
+
+.wl-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid #d0d7de;
+  border-radius: 2px;
+  background: #ffffff !important;
+  font-size: 11.5px;
+  color: #24292f !important;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wl-act:not(:disabled):hover { background: #f0f6ff !important; border-color: #0969da; color: #0969da !important; }
+.wl-act:disabled { opacity: .4; cursor: default; }
+.wl-act--danger:not(:disabled):hover { background: #fff0f0 !important; border-color: #cf222e; color: #cf222e !important; }
+.wl-act-icon { font-size: 10px; }
+
+.wl-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: #8c959f !important;
+  font-style: italic;
+}
+
 /* ── Table wrapper ── */
 .wl-table-wrap {
   flex: 1;
@@ -471,12 +638,21 @@ onUnmounted(() => {
   text-transform: uppercase;
   letter-spacing: .04em;
   border-right: 1px solid #d8dee4;
-  border-bottom: 1px solid #d0d7de;
+  border-bottom: 2px solid #d0d7de;
   white-space: nowrap;
   text-align: left;
   background: #f6f8fa !important;
+  cursor: pointer;
+  user-select: none;
 }
 .wl-table th:last-child { border-right: none; }
+.wl-table th:hover { background: #eaeef2 !important; }
+
+.wl-sort {
+  color: #8c959f;
+  font-size: 10px;
+  font-style: normal;
+}
 
 /* body rows */
 .wl-table tbody tr {
@@ -503,9 +679,15 @@ onUnmounted(() => {
   border-color: transparent !important;
 }
 
+.wl-row--filler {
+  cursor: default;
+  height: 22px;
+}
+.wl-row--filler:hover { background: #ffffff !important; }
+
 .wl-table td {
-  padding: 4px 8px;
-  font-size: 12.5px;
+  padding: 3px 8px;
+  font-size: 12px;
   color: #24292f !important;
   border-right: 1px solid #eaeef2;
   white-space: nowrap;
@@ -516,13 +698,12 @@ onUnmounted(() => {
 }
 .wl-table td:last-child { border-right: none; }
 
-.wl-cell--mono { font-family: ui-monospace, 'Cascadia Mono', monospace; font-size: 11.5px; color: #0969da !important; }
-.wl-cell--name { font-weight: 600; color: #24292f !important; }
+.wl-cell--mono  { font-family: ui-monospace, 'Cascadia Mono', monospace; font-size: 11.5px; color: #0969da !important; }
+.wl-cell--name  { font-weight: 600; color: #24292f !important; }
+.wl-cell--school { font-size: 11.5px; color: #57606a !important; }
 
-.wl-col-actions { width: 44px; text-align: center; }
-
-.wl-paid  { color: #1a7f37 !important; font-size: 12px; }
-.wl-debt  { color: #cf222e !important; font-weight: 600; font-size: 12px; }
+.wl-paid  { color: #1a7f37 !important; font-size: 11.5px; font-weight: 500; }
+.wl-debt  { color: #cf222e !important; font-weight: 600; font-size: 11.5px; }
 
 .wl-empty {
   text-align: center;
@@ -532,48 +713,34 @@ onUnmounted(() => {
   background: #ffffff;
 }
 
-/* ── Row action button ── */
-.wl-btn-icon {
-  width: 24px; height: 20px;
+/* ── Context menu ── */
+.wl-ctx {
+  position: fixed;
+  z-index: 9999;
+  background: #ffffff;
   border: 1px solid #d0d7de;
-  border-radius: 2px;
-  background: #ffffff !important;
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-  color: #57606a !important;
-}
-.wl-btn-icon:hover { background: #f3f4f6 !important; }
-
-/* ── Dropdown ── */
-.wl-dropdown {
-  position: absolute;
-  right: 0; bottom: 100%;
-  background: #ffffff !important;
-  border: 1px solid #d0d7de;
-  border-radius: 3px;
-  box-shadow: 0 8px 24px rgba(140,149,159,.2);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(140,149,159,.25);
   padding: 4px;
+  min-width: 170px;
   display: flex;
   flex-direction: column;
   gap: 1px;
-  z-index: 200;
-  min-width: 165px;
 }
-.wl-dropdown button {
+.wl-ctx button {
   display: block;
   width: 100%;
   padding: 5px 10px;
   text-align: left;
-  background: none !important;
+  background: none;
   border: none;
   border-radius: 2px;
   font-size: 12px;
-  color: #24292f !important;
+  color: #24292f;
   cursor: pointer;
 }
-.wl-dropdown button:hover { background: #f6f8fa !important; }
-.wl-dropdown--danger { color: #cf222e !important; }
+.wl-ctx button:hover { background: #f6f8fa; }
+.wl-ctx--danger { color: #cf222e !important; }
 
 /* ── Pagination ── */
 .wl-pagination {
@@ -587,14 +754,15 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 .wl-pagination button {
-  min-width: 28px; height: 24px;
-  padding: 0 7px;
+  height: 26px;
+  padding: 0 10px;
   border: 1px solid #d0d7de;
   border-radius: 2px;
   background: #ffffff !important;
   font-size: 12px;
   color: #24292f !important;
   cursor: pointer;
+  white-space: nowrap;
 }
 .wl-pagination button:hover:not(:disabled) { background: #f0f6ff !important; border-color: #0969da; color: #0969da !important; }
 .wl-pagination button:disabled { opacity: .35; cursor: default; }
