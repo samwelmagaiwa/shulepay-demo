@@ -83,16 +83,16 @@
 
       <table v-else class="wl-table">
         <colgroup>
-          <col style="width:170px"><!-- Full Name -->
-          <col style="width:95px"> <!-- Admission -->
-          <col style="width:88px"> <!-- DOB -->
-          <col style="width:70px"> <!-- Class -->
-          <col style="width:120px"><!-- School -->
-          <col style="width:60px"> <!-- Gender -->
-          <col style="width:90px"> <!-- Sponsorship -->
-          <col style="width:85px"> <!-- Admitted -->
-          <col style="width:100px"><!-- Outstanding -->
-          <col style="width:76px"> <!-- Status -->
+          <col style="width:180px"><!-- Full Name -->
+          <col style="width:150px"><!-- Admission -->
+          <col style="width:100px"><!-- DOB -->
+          <col style="width:110px"><!-- Class -->
+          <col style="width:160px"><!-- School -->
+          <col style="width:65px"> <!-- Gender -->
+          <col style="width:130px"><!-- Sponsorship -->
+          <col style="width:110px"><!-- Admitted -->
+          <col style="width:110px"><!-- Outstanding -->
+          <col style="width:85px"> <!-- Status -->
         </colgroup>
         <thead>
           <tr>
@@ -363,14 +363,7 @@ function formatDateLong(d) {
 }
 
 function formatDateShort(d) {
-  if (!d) return '—'
-  const parts = d.split('-')
-  if (parts.length !== 3) return d
-  const day = parseInt(parts[2], 10)
-  const mon = MONTHS[parseInt(parts[1], 10) - 1] || parts[1]
-  const yr  = parts[0]
-  const label = `${day}-${mon}-${yr}`
-  return label.length > 12 ? label.slice(0, 12) + '...' : label
+  return formatDateLong(d)
 }
 
 function genderLabel(g) {
