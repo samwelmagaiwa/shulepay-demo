@@ -733,11 +733,11 @@ onUnmounted(() => {
 /* body rows — alternating stripe */
 .wl-table tbody tr {
   cursor: pointer;
-  border-bottom: 1px solid #eaeef2;
+  border-bottom: 1px solid #e4e8ed;
   background: #ffffff;
 }
 .wl-table tbody tr:nth-child(even) {
-  background: #f6f8fa;
+  background: #f0f4f8;
 }
 .wl-table tbody tr:hover {
   background: #dbeafe !important;

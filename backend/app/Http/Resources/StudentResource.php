@@ -96,13 +96,12 @@ class StudentResource extends JsonResource
                 fn () => InvoiceResource::collection($this->invoices)
             ),
 
-            // When invoices are loaded (detail view), compute from the collection.
-            // When only the list subquery ran, the value is already on the model
-            // as a raw attribute — use it directly to avoid an N+1 load.
+            // Detail view: invoices are loaded — compute from the collection.
+            // List view: DB subquery appended via addSelect — read the raw attribute.
             'outstanding_balance_cents' => $this->relationLoaded('invoices')
                 ? $this->outstandingBalanceCents()
-                : (isset($this->resource->outstanding_balance_cents)
-                    ? (int) $this->resource->outstanding_balance_cents
+                : (array_key_exists('outstanding_balance_cents', $this->resource->getAttributes())
+                    ? (int) $this->resource->getAttributes()['outstanding_balance_cents']
                     : null),
 
             'created_at' => $this->created_at?->toISOString(),
