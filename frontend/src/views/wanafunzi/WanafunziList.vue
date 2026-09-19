@@ -1,48 +1,61 @@
 <template>
   <div class="wl-shell" @click="onShellClick">
 
-    <!-- ── Toolbar ── -->
-    <div class="wl-toolbar">
-      <div class="wl-filters">
-        <input
-          v-model="filters.search"
-          class="wl-input"
-          :placeholder="t('students.searchPlaceholder')"
-          @input="debouncedFetch"
-        />
-        <select v-model="filters.school_id" class="wl-select" @change="page = 1; fetchData()">
-          <option value="">{{ t('common.allSchools') }}</option>
-          <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
-        </select>
-        <select v-model="filters.status" class="wl-select" @change="page = 1; fetchData()">
-          <option value="">{{ t('common.allStatuses') }}</option>
-          <option value="active">{{ t('students.statuses.active') }}</option>
-          <option value="sponsored">{{ t('students.statuses.sponsored') }}</option>
-          <option value="half_sponsored">{{ t('students.statuses.half_sponsored') }}</option>
-          <option value="orphaned">{{ t('students.statuses.orphaned') }}</option>
-          <option value="transferred">{{ t('students.statuses.transferred') }}</option>
-          <option value="graduated">{{ t('students.statuses.graduated') }}</option>
-          <option value="dropped">{{ t('students.statuses.dropped') }}</option>
-        </select>
-        <select v-model="filters.has_debt" class="wl-select" @change="page = 1; fetchData()">
-          <option value="">{{ t('students.allPaymentStatus') }}</option>
-          <option value="1">{{ t('students.hasDebt') }}</option>
-          <option value="partial">{{ t('students.partialPaid') }}</option>
-          <option value="0">{{ t('students.noDebt') }}</option>
-        </select>
-        <button class="wl-btn-reset" @click="resetFilters">{{ t('common.reset') }}</button>
-      </div>
-
-      <div class="wl-actions">
-        <span class="wl-count">{{ meta.total }} {{ t('students.students') }}</span>
+    <!-- ── Top bar ── -->
+    <div class="wl-topbar">
+      <div class="wl-topbar-left">
+        <span class="wl-showing">
+          Showing {{ showingFrom }}–{{ showingTo }} of {{ meta.total }}
+        </span>
         <select v-model="perPage" class="wl-select wl-select--sm" @change="onPerPageChange">
           <option value="10">10</option>
           <option value="20">20</option>
           <option value="50">50</option>
           <option value="100">100</option>
         </select>
-        <button class="wl-btn-add" @click="showAddModal = true">+ {{ t('students.add') }}</button>
+        <span class="wl-perpage-label">per page</span>
+        <button class="wl-btn-filter" :class="{ 'wl-btn-filter--active': filtersVisible }" @click.stop="filtersVisible = !filtersVisible" title="Filters">
+          &#9776; Filter
+        </button>
       </div>
+      <div class="wl-topbar-right">
+        <button class="wl-btn-add" @click="showAddModal = true">+ {{ t('students.add') }}</button>
+        <div class="wl-pagination-top">
+          <button :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; fetchData()">Previous</button>
+          <button
+            v-for="p in visiblePages" :key="p"
+            :class="{ 'wl-page--active': p === meta.current_page }"
+            @click="page = p; fetchData()"
+          >{{ p }}</button>
+          <button :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; fetchData()">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Collapsible filters ── -->
+    <div v-if="filtersVisible" class="wl-filters-panel" @click.stop>
+      <input v-model="filters.search" class="wl-input" :placeholder="t('students.searchPlaceholder')" @input="debouncedFetch" />
+      <select v-model="filters.school_id" class="wl-select" @change="page = 1; fetchData()">
+        <option value="">{{ t('common.allSchools') }}</option>
+        <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+      </select>
+      <select v-model="filters.status" class="wl-select" @change="page = 1; fetchData()">
+        <option value="">{{ t('common.allStatuses') }}</option>
+        <option value="active">{{ t('students.statuses.active') }}</option>
+        <option value="sponsored">{{ t('students.statuses.sponsored') }}</option>
+        <option value="half_sponsored">{{ t('students.statuses.half_sponsored') }}</option>
+        <option value="orphaned">{{ t('students.statuses.orphaned') }}</option>
+        <option value="transferred">{{ t('students.statuses.transferred') }}</option>
+        <option value="graduated">{{ t('students.statuses.graduated') }}</option>
+        <option value="dropped">{{ t('students.statuses.dropped') }}</option>
+      </select>
+      <select v-model="filters.has_debt" class="wl-select" @change="page = 1; fetchData()">
+        <option value="">{{ t('students.allPaymentStatus') }}</option>
+        <option value="1">{{ t('students.hasDebt') }}</option>
+        <option value="partial">{{ t('students.partialPaid') }}</option>
+        <option value="0">{{ t('students.noDebt') }}</option>
+      </select>
+      <button class="wl-btn-reset" @click="resetFilters">{{ t('common.reset') }}</button>
     </div>
 
     <!-- ── Action bar ── -->
@@ -124,17 +137,17 @@
           >
             <td class="wl-cell--name">{{ s.full_name }}</td>
             <td class="wl-cell--mono">{{ s.admission_number || '—' }}</td>
-            <td>{{ formatDate(s.date_of_birth) }}</td>
+            <td>{{ formatDateLong(s.date_of_birth) }}</td>
             <td>{{ s.school_class?.name || '—' }}</td>
             <td class="wl-cell--school">{{ s.school?.name || '—' }}</td>
             <td>{{ genderLabel(s.gender) }}</td>
             <td>{{ sponsorshipLabel(s.sponsorship_type) }}</td>
-            <td>{{ formatDate(s.admitted_at) }}</td>
+            <td>{{ formatDateShort(s.admitted_at) }}</td>
             <td>
               <span v-if="!s.outstanding_balance_cents || s.outstanding_balance_cents <= 0" class="wl-paid">Paid up</span>
               <span v-else class="wl-debt">{{ formatMoney(s.outstanding_balance_cents) }}</span>
             </td>
-            <td><StatusBadge :status="s.status" /></td>
+            <td><span :class="['wl-badge', 'wl-badge--' + (s.status || 'active')]">{{ statusLabel(s.status) }}</span></td>
           </tr>
           <!-- filler rows to fill remaining space -->
           <tr v-for="n in fillerRows" :key="'filler-' + n" class="wl-row--filler" aria-hidden="true">
@@ -147,20 +160,7 @@
       </table>
     </div>
 
-    <!-- ── Pagination ── -->
-    <div class="wl-pagination">
-      <button :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; fetchData()">
-        ‹ Previous
-      </button>
-      <button
-        v-for="p in visiblePages" :key="p"
-        :class="{ 'wl-page--active': p === meta.current_page }"
-        @click="page = p; fetchData()"
-      >{{ p }}</button>
-      <button :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; fetchData()">
-        Next ›
-      </button>
-    </div>
+    <!-- pagination is in top bar -->
 
   </div><!-- /wl-shell -->
 
@@ -256,7 +256,6 @@ import api from '@/services/api'
 import OrphanedInvoicesModal from '@/components/OrphanedInvoicesModal.vue'
 import { useSchoolsStore }  from '@/stores/schools'
 import { useSchoolStore }   from '@/stores/school'
-import StatusBadge         from '@/components/StatusBadge.vue'
 import MwanafunziDrawer    from '@/components/MwanafunziDrawer.vue'
 import AddStudentModal     from '@/components/AddStudentModal.vue'
 
@@ -278,6 +277,7 @@ const deleting         = ref(false)
 const page            = ref(1)
 const perPage         = ref('20')
 const meta            = ref({ total: 0, last_page: 1, per_page: 20, current_page: 1 })
+const filtersVisible  = ref(false)
 let   debounceTimer   = null
 
 const sortKey = ref('')
@@ -286,6 +286,14 @@ const sortDir = ref('asc')
 const contextMenu = ref({ visible: false, x: 0, y: 0, student: null })
 
 const MIN_ROWS = 18
+
+const showingFrom = computed(() => {
+  if (meta.value.total === 0) return 0
+  return (meta.value.current_page - 1) * Number(perPage.value) + 1
+})
+const showingTo = computed(() => {
+  return Math.min(meta.value.current_page * Number(perPage.value), meta.value.total)
+})
 
 const fillerRows = computed(() => {
   const count = studentsStore.students.length
@@ -338,15 +346,31 @@ watch(() => schoolStore.activeSchoolId, (id) => {
   fetchData()
 })
 
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
 function formatMoney(cents) {
-  return 'TZS ' + Number(cents / 100).toLocaleString('sw-TZ', { minimumFractionDigits: 0 })
+  return 'TZS ' + Number(cents / 100).toLocaleString('en', { minimumFractionDigits: 0 })
 }
 
-function formatDate(d) {
+function formatDateLong(d) {
   if (!d) return '—'
   const parts = d.split('-')
   if (parts.length !== 3) return d
-  return parts[2] + '/' + parts[1] + '/' + parts[0].slice(2)
+  const day = parseInt(parts[2], 10)
+  const mon = MONTHS[parseInt(parts[1], 10) - 1] || parts[1]
+  const yr  = parts[0]
+  return `${day}-${mon}-${yr}`
+}
+
+function formatDateShort(d) {
+  if (!d) return '—'
+  const parts = d.split('-')
+  if (parts.length !== 3) return d
+  const day = parseInt(parts[2], 10)
+  const mon = MONTHS[parseInt(parts[1], 10) - 1] || parts[1]
+  const yr  = parts[0]
+  const label = `${day}-${mon}-${yr}`
+  return label.length > 12 ? label.slice(0, 12) + '...' : label
 }
 
 function genderLabel(g) {
@@ -358,8 +382,17 @@ function genderLabel(g) {
 }
 
 function sponsorshipLabel(s) {
-  if (!s) return '—'
-  const map = { none: 'None', full: 'Full', half: 'Half', full_paid: 'Full Paid' }
+  if (!s || s === 'none') return 'Not Sponsored'
+  const map = { full: 'Sponsored (Free)', half: 'Half Sponsored', full_paid: 'Sponsored (Paid)' }
+  return map[s] || s
+}
+
+function statusLabel(s) {
+  if (!s) return 'Active'
+  const map = {
+    active: 'Active', sponsored: 'Sponsored', half_sponsored: 'Half Sponsored',
+    orphaned: 'Orphaned', transferred: 'Transferred', graduated: 'Graduated', dropped: 'Dropped',
+  }
   return map[s] || s
 }
 
@@ -502,20 +535,55 @@ onUnmounted(() => {
   color: #24292f;
 }
 
-/* ── Toolbar ── */
-.wl-toolbar {
+/* ── Top bar ── */
+.wl-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-bottom: 1px solid #d0d7de;
   background: #f6f8fa !important;
   flex-shrink: 0;
 }
-.wl-filters { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-.wl-actions  { display: flex; align-items: center; gap: 6px; }
+.wl-topbar-left  { display: flex; align-items: center; gap: 6px; }
+.wl-topbar-right { display: flex; align-items: center; gap: 6px; }
+
+.wl-showing {
+  font-size: 12px;
+  color: #24292f !important;
+  white-space: nowrap;
+}
+.wl-perpage-label {
+  font-size: 12px;
+  color: #57606a !important;
+}
+
+.wl-btn-filter {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid #d0d7de;
+  border-radius: 2px;
+  background: #ffffff !important;
+  font-size: 12px;
+  color: #57606a !important;
+  cursor: pointer;
+}
+.wl-btn-filter:hover { background: #f0f6ff !important; color: #0969da !important; }
+.wl-btn-filter--active { background: #dbeafe !important; border-color: #0969da; color: #0969da !important; }
+
+/* ── Collapsible filters panel ── */
+.wl-filters-panel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 5px 12px;
+  border-bottom: 1px solid #d0d7de;
+  background: #f0f6ff !important;
+  flex-shrink: 0;
+}
 
 .wl-input, .wl-select {
   height: 26px;
@@ -543,24 +611,39 @@ onUnmounted(() => {
 .wl-btn-reset:hover { background: #f3f4f6 !important; }
 
 .wl-btn-add {
-  height: 26px;
-  padding: 0 12px;
+  height: 28px;
+  padding: 0 14px;
   border: none;
-  border-radius: 2px;
+  border-radius: 3px;
   background: #0969da !important;
   color: #fff !important;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
 }
 .wl-btn-add:hover { background: #0860ca !important; }
 
-.wl-count {
-  font-size: 11.5px;
-  color: #57606a !important;
+/* top-bar pagination */
+.wl-pagination-top {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.wl-pagination-top button {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #d0d7de;
+  border-radius: 3px;
+  background: #ffffff !important;
+  font-size: 12px;
+  color: #24292f !important;
+  cursor: pointer;
   white-space: nowrap;
 }
+.wl-pagination-top button:hover:not(:disabled) { background: #f0f6ff !important; border-color: #0969da; color: #0969da !important; }
+.wl-pagination-top button:disabled { opacity: .35; cursor: default; }
+.wl-page--active { background: #0969da !important; color: #fff !important; border-color: #0969da !important; }
 
 /* ── Action bar ── */
 .wl-actionbar {
@@ -654,14 +737,17 @@ onUnmounted(() => {
   font-style: normal;
 }
 
-/* body rows */
+/* body rows — alternating stripe */
 .wl-table tbody tr {
   cursor: pointer;
   border-bottom: 1px solid #eaeef2;
   background: #ffffff;
 }
+.wl-table tbody tr:nth-child(even) {
+  background: #f6f8fa;
+}
 .wl-table tbody tr:hover {
-  background: #f0f6ff !important;
+  background: #dbeafe !important;
 }
 .wl-table tbody tr.wl-row--selected {
   background: #0969da !important;
@@ -742,29 +828,26 @@ onUnmounted(() => {
 .wl-ctx button:hover { background: #f6f8fa; }
 .wl-ctx--danger { color: #cf222e !important; }
 
-/* ── Pagination ── */
-.wl-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  padding: 7px;
-  border-top: 1px solid #d0d7de;
-  background: #f6f8fa !important;
-  flex-shrink: 0;
-}
-.wl-pagination button {
-  height: 26px;
-  padding: 0 10px;
-  border: 1px solid #d0d7de;
-  border-radius: 2px;
-  background: #ffffff !important;
-  font-size: 12px;
-  color: #24292f !important;
-  cursor: pointer;
+/* ── Status badges ── */
+.wl-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
   white-space: nowrap;
+  color: #fff !important;
 }
-.wl-pagination button:hover:not(:disabled) { background: #f0f6ff !important; border-color: #0969da; color: #0969da !important; }
-.wl-pagination button:disabled { opacity: .35; cursor: default; }
-.wl-page--active { background: #0969da !important; color: #fff !important; border-color: #0969da !important; }
+.wl-badge--active       { background: #1a7f37; }
+.wl-badge--sponsored    { background: #0969da; }
+.wl-badge--half_sponsored { background: #6e40c9; }
+.wl-badge--orphaned     { background: #9a6700; }
+.wl-badge--transferred  { background: #57606a; }
+.wl-badge--graduated    { background: #0969da; }
+.wl-badge--dropped      { background: #cf222e; }
+
+.wl-table tbody tr.wl-row--selected .wl-badge {
+  background: rgba(255,255,255,.3) !important;
+  color: #fff !important;
+}
 </style>
