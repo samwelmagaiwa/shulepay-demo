@@ -1,145 +1,117 @@
 <template>
-  <CContainer fluid>
-    <!-- Filters -->
-    <CCard class="mb-2">
-      <CCardBody class="py-2">
-        <CRow class="g-2">
-          <CCol sm="4" md="2">
-            <CFormInput v-model="filters.search" :placeholder="t('students.searchPlaceholder')" @input="debouncedFetch" />
-          </CCol>
-          <CCol sm="3" md="2">
-            <CFormSelect v-model="filters.school_id" @update:modelValue="page = 1; fetchData()">
-              <option value="">{{ t('common.allSchools') }}</option>
-              <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="3" md="2">
-            <CFormSelect v-model="filters.status" @update:modelValue="page = 1; fetchData()">
-              <option value="">{{ t('common.allStatuses') }}</option>
-              <option value="active">{{ t('students.statuses.active') }}</option>
-              <option value="sponsored">{{ t('students.statuses.sponsored') }}</option>
-              <option value="half_sponsored">{{ t('students.statuses.half_sponsored') }}</option>
-              <option value="orphaned">{{ t('students.statuses.orphaned') }}</option>
-              <option value="transferred">{{ t('students.statuses.transferred') }}</option>
-              <option value="graduated">{{ t('students.statuses.graduated') }}</option>
-              <option value="dropped">{{ t('students.statuses.dropped') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="3" md="2">
-            <CFormSelect v-model="filters.sponsorship_type" @update:modelValue="page = 1; fetchData()">
-              <option value="">🎗️ {{ t('students.allSponsorshipTypes') }}</option>
-              <option value="none">{{ t('students.notSponsored') }}</option>
-              <option value="half">{{ t('students.halfSponsored') }}</option>
-              <option value="full_paid">{{ t('students.fullySponsoredPaid') }}</option>
-              <option value="full">{{ t('students.fullySponsoredFree') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="3" md="2">
-            <CFormSelect v-model="filters.has_debt" @update:modelValue="page = 1; fetchData()">
-              <option value="">💰 {{ t('students.allPaymentStatus') }}</option>
-              <option value="1">🔴 {{ t('students.hasDebt') }}</option>
-              <option value="partial">🟡 {{ t('students.partialPaid') }}</option>
-              <option value="0">✅ {{ t('students.noDebt') }}</option>
-            </CFormSelect>
-          </CCol>
-          <CCol sm="2" md="2">
-            <CButton color="secondary" variant="outline" @click="resetFilters" class="w-100">{{ t('common.reset') }}</CButton>
-          </CCol>
-        </CRow>
-      </CCardBody>
-    </CCard>
+  <div class="wl-shell">
 
-    <!-- Count + per-page + Add button + Pagination — all on one row -->
-    <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-      <div class="d-flex align-items-center gap-2">
-        <small class="text-medium-emphasis text-nowrap">
-          {{ t('common.showing', { from: meta.total === 0 ? 0 : (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
-        </small>
-        <CFormSelect v-model="perPage" @update:modelValue="onPerPageChange" size="sm" style="width:80px;">
+    <!-- ── Toolbar ── -->
+    <div class="wl-toolbar">
+      <div class="wl-filters">
+        <input
+          v-model="filters.search"
+          class="wl-input"
+          :placeholder="t('students.searchPlaceholder')"
+          @input="debouncedFetch"
+        />
+        <select v-model="filters.school_id" class="wl-select" @change="page = 1; fetchData()">
+          <option value="">{{ t('common.allSchools') }}</option>
+          <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
+        </select>
+        <select v-model="filters.status" class="wl-select" @change="page = 1; fetchData()">
+          <option value="">{{ t('common.allStatuses') }}</option>
+          <option value="active">{{ t('students.statuses.active') }}</option>
+          <option value="sponsored">{{ t('students.statuses.sponsored') }}</option>
+          <option value="half_sponsored">{{ t('students.statuses.half_sponsored') }}</option>
+          <option value="orphaned">{{ t('students.statuses.orphaned') }}</option>
+          <option value="transferred">{{ t('students.statuses.transferred') }}</option>
+          <option value="graduated">{{ t('students.statuses.graduated') }}</option>
+          <option value="dropped">{{ t('students.statuses.dropped') }}</option>
+        </select>
+        <select v-model="filters.has_debt" class="wl-select" @change="page = 1; fetchData()">
+          <option value="">{{ t('students.allPaymentStatus') }}</option>
+          <option value="1">{{ t('students.hasDebt') }}</option>
+          <option value="partial">{{ t('students.partialPaid') }}</option>
+          <option value="0">{{ t('students.noDebt') }}</option>
+        </select>
+        <button class="wl-btn-reset" @click="resetFilters">{{ t('common.reset') }}</button>
+      </div>
+
+      <div class="wl-actions">
+        <span class="wl-count">{{ meta.total }} {{ t('students.students') }}</span>
+        <select v-model="perPage" class="wl-select wl-select--sm" @change="onPerPageChange">
           <option value="10">10</option>
           <option value="20">20</option>
           <option value="50">50</option>
           <option value="100">100</option>
-        </CFormSelect>
-        <small class="text-medium-emphasis text-nowrap">{{ t('common.perPage') }}</small>
-      </div>
-      <div class="d-flex align-items-center gap-2">
-        <CButton color="primary" size="sm" @click="showAddModal = true">
-          <CIcon icon="cilPlus" class="me-1" /> {{ t('students.add') }}
-        </CButton>
-        <CPagination v-if="meta.last_page > 1" aria-label="Page" size="sm" class="mb-0">
-          <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; fetchData()">{{ t('common.prev') }}</CPaginationItem>
-          <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; fetchData()">{{ p }}</CPaginationItem>
-          <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; fetchData()">{{ t('common.next') }}</CPaginationItem>
-        </CPagination>
+        </select>
+        <button class="wl-btn-add" @click="showAddModal = true">+ {{ t('students.add') }}</button>
       </div>
     </div>
 
-    <!-- Table -->
-    <CCard>
-      <CCardBody class="p-0">
-        <div v-if="studentsStore.loading" class="text-center py-5">
-          <CSpinner color="primary" />
-        </div>
-        <CTable v-else responsive hover class="mb-0">
-          <CTableHead class="table-light">
-            <CTableRow>
-              <CTableHeaderCell>{{ t('students.admission') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('students.fullName') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('common.class') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('students.gender') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('common.status') }}</CTableHeaderCell>
-              <CTableHeaderCell>{{ t('students.debt') }}</CTableHeaderCell>
-              <CTableHeaderCell class="text-center" style="width:56px;">{{ t('common.actions') }}</CTableHeaderCell>
-            </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            <CTableRow
-              v-for="s in studentsStore.students"
-              :key="s.id"
-              style="cursor:pointer"
-              @click="openDetail(s)"
-            >
-              <CTableDataCell class="fw-medium">{{ s.admission_number }}</CTableDataCell>
-              <CTableDataCell>{{ s.full_name }}</CTableDataCell>
-              <CTableDataCell>{{ s.school_class?.name || '—' }}</CTableDataCell>
-              <CTableDataCell>{{ s.gender === 'male' || s.gender === 'me' ? t('students.male') : s.gender === 'female' || s.gender === 'ke' ? t('students.female') : '—' }}</CTableDataCell>
-              <CTableDataCell><StatusBadge :status="s.status" /></CTableDataCell>
-              <CTableDataCell>
-                <span v-if="!s.outstanding_balance_cents || s.outstanding_balance_cents <= 0"
-                      class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill fw-semibold"
-                      style="background:rgba(25,135,84,0.1); color:#198754; font-size:.75rem;">
-                  ✓ Amelipa
-                </span>
-                <span v-else class="fw-semibold text-danger">
-                  {{ formatMoney(s.outstanding_balance_cents) }}
-                </span>
-              </CTableDataCell>
-              <CTableDataCell style="position:relative; min-width:56px; text-align:center;">
-                <CButton size="sm" color="secondary" variant="ghost" @click.stop="activeRow = activeRow === s.id ? null : s.id">👁️</CButton>
-                <div v-if="activeRow === s.id"
-                     style="position:absolute; bottom:100%; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.12); padding:4px; display:flex; flex-direction:column; gap:2px; z-index:100; min-width:160px;"
-                     @click.stop>
-                  <CButton size="sm" color="info" variant="ghost" class="text-start" @click="openDetail(s); activeRow = null">👁️ {{ t('common.view') }}</CButton>
-                  <CButton size="sm" color="primary" variant="ghost" class="text-start" @click="openEdit(s); activeRow = null">✏️ {{ t('common.edit') }}</CButton>
-                  <CButton size="sm" color="warning" variant="ghost" class="text-start" @click="router.push({ name: 'MwanafunziDetail', params: { id: s.id }, query: { tab: 'ahadi' } }); activeRow = null">🤝 {{ t('students.summary.recordPromise') }}</CButton>
-                  <CButton size="sm" color="danger" variant="ghost" class="text-start" @click="confirmDelete(s); activeRow = null">🗑️ {{ t('common.delete') }}</CButton>
-                </div>
-              </CTableDataCell>
-            </CTableRow>
-            <CTableRow v-if="!studentsStore.loading && studentsStore.students.length === 0">
-              <CTableDataCell colspan="7" class="text-center text-muted py-4">
-                {{ t('students.noStudents') }}
-              </CTableDataCell>
-            </CTableRow>
-          </CTableBody>
-        </CTable>
-      </CCardBody>
-    </CCard>
+    <!-- ── Grid table ── -->
+    <div class="wl-table-wrap">
+      <div v-if="studentsStore.loading" class="wl-loading">
+        <CSpinner color="primary" />
+      </div>
+
+      <table v-else class="wl-table">
+        <thead>
+          <tr>
+            <th>{{ t('students.admission') }}</th>
+            <th>{{ t('students.fullName') }}</th>
+            <th>{{ t('common.class') }}</th>
+            <th>{{ t('students.gender') }}</th>
+            <th>{{ t('common.status') }}</th>
+            <th>{{ t('students.debt') }}</th>
+            <th class="wl-col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="s in studentsStore.students"
+            :key="s.id"
+            :class="{ 'wl-row--selected': selectedStudent?.id === s.id }"
+            @click="openDetail(s)"
+          >
+            <td class="wl-cell--mono">{{ s.admission_number }}</td>
+            <td class="wl-cell--name">{{ s.full_name }}</td>
+            <td>{{ s.school_class?.name || '—' }}</td>
+            <td>{{ s.gender === 'male' || s.gender === 'me' ? t('students.male') : s.gender === 'female' || s.gender === 'ke' ? t('students.female') : '—' }}</td>
+            <td><StatusBadge :status="s.status" /></td>
+            <td>
+              <span v-if="!s.outstanding_balance_cents || s.outstanding_balance_cents <= 0" class="wl-paid">✓ Amelipa</span>
+              <span v-else class="wl-debt">{{ formatMoney(s.outstanding_balance_cents) }}</span>
+            </td>
+            <td class="wl-col-actions" style="position:relative;">
+              <button class="wl-btn-icon" @click.stop="activeRow = activeRow === s.id ? null : s.id">⋯</button>
+              <div v-if="activeRow === s.id" class="wl-dropdown" @click.stop>
+                <button @click="openDetail(s); activeRow = null">👁️ {{ t('common.view') }}</button>
+                <button @click="openEdit(s); activeRow = null">✏️ {{ t('common.edit') }}</button>
+                <button @click="router.push({ name: 'MwanafunziDetail', params: { id: s.id }, query: { tab: 'ahadi' } }); activeRow = null">🤝 {{ t('students.summary.recordPromise') }}</button>
+                <button class="wl-dropdown--danger" @click="confirmDelete(s); activeRow = null">🗑️ {{ t('common.delete') }}</button>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="!studentsStore.loading && studentsStore.students.length === 0">
+            <td colspan="7" class="wl-empty">{{ t('students.noStudents') }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Pagination ── -->
+    <div v-if="meta.last_page > 1" class="wl-pagination">
+      <button :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; fetchData()">‹</button>
+      <button
+        v-for="p in visiblePages" :key="p"
+        :class="{ 'wl-page--active': p === meta.current_page }"
+        @click="page = p; fetchData()"
+      >{{ p }}</button>
+      <button :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; fetchData()">›</button>
+    </div>
 
 
-    <!-- Student Detail Drawer -->
-    <MwanafunziDrawer v-if="selectedStudent" :student="selectedStudent" @close="selectedStudent = null" />
+  </div><!-- /wl-shell -->
+
+  <!-- Student Detail Drawer -->
+  <MwanafunziDrawer v-if="selectedStudent" :student="selectedStudent" @close="selectedStudent = null" />
 
     <!-- Invoices left behind by the student just deleted. -->
     <OrphanedInvoicesModal v-model:visible="showOrphanModal" />
@@ -199,24 +171,22 @@
       </CModalFooter>
     </CModal>
 
-    <!-- Add / Edit Student Modal — the full registration wizard doubles as the
-         edit flow when opened with mode="edit" and an editStudentId. -->
-    <AddStudentModal
-      :visible="showAddModal || showEditModal"
-      :mode="showEditModal ? 'edit' : 'create'"
-      :edit-student-id="showEditModal ? editStudent?.id : null"
-      @close="showAddModal = false; showEditModal = false"
-      @saved="onStudentSaved"
-      @registered="onStudentRegistered"
-    />
-  </CContainer>
+  <!-- Add / Edit Student Modal -->
+  <AddStudentModal
+    :visible="showAddModal || showEditModal"
+    :mode="showEditModal ? 'edit' : 'create'"
+    :edit-student-id="showEditModal ? editStudent?.id : null"
+    @close="showAddModal = false; showEditModal = false"
+    @saved="onStudentSaved"
+    @registered="onStudentRegistered"
+  />
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { CPagination, CPaginationItem } from '@coreui/vue'
+import { CPagination, CPaginationItem, CSpinner } from '@coreui/vue'
 import { useStudentsStore } from '@/stores/students'
 import api from '@/services/api'
 import OrphanedInvoicesModal from '@/components/OrphanedInvoicesModal.vue'
@@ -385,6 +355,240 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-:deep(.table-responsive) { overflow: visible; }
-:deep(.card) { overflow: visible; }
+/* ── Shell ── */
+.wl-shell {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  background: #fff;
+  border: 1px solid #dde3ea;
+  border-radius: 4px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+/* ── Toolbar ── */
+.wl-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #dde3ea;
+  background: #f7f9fb;
+  flex-shrink: 0;
+}
+.wl-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.wl-actions  { display: flex; align-items: center; gap: 8px; }
+
+.wl-input, .wl-select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #c8d0da;
+  border-radius: 3px;
+  font-size: 12px;
+  background: #fff;
+  color: #2d3a47;
+  outline: none;
+}
+.wl-input:focus, .wl-select:focus { border-color: #0d6efd; }
+.wl-select--sm { width: 60px; }
+
+.wl-btn-reset {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #c8d0da;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 12px;
+  color: #5a6a7a;
+  cursor: pointer;
+}
+.wl-btn-reset:hover { background: #f0f0f0; }
+
+.wl-btn-add {
+  height: 28px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 3px;
+  background: #0d6efd;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wl-btn-add:hover { background: #0b5ed7; }
+
+.wl-count {
+  font-size: 12px;
+  color: #6b7a8d;
+  white-space: nowrap;
+}
+
+/* ── Table wrapper ── */
+.wl-table-wrap {
+  flex: 1;
+  overflow: auto;
+}
+
+.wl-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px;
+}
+
+/* ── Table ── */
+.wl-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.wl-table thead tr {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f0f4f8;
+}
+
+.wl-table th {
+  padding: 6px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #3a4a5a;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  border-right: 1px solid #dde3ea;
+  border-bottom: 1px solid #c8d0da;
+  white-space: nowrap;
+  text-align: left;
+}
+.wl-table th:last-child { border-right: none; }
+
+.wl-table tbody tr {
+  cursor: pointer;
+  border-bottom: 1px solid #edf0f3;
+}
+.wl-table tbody tr:hover { background: #e8f0fe; }
+.wl-table tbody tr.wl-row--selected { background: #1a73e8; color: #fff; }
+.wl-table tbody tr.wl-row--selected td { color: #fff; }
+.wl-table tbody tr.wl-row--selected .wl-paid,
+.wl-table tbody tr.wl-row--selected .wl-debt { color: #fff; }
+
+.wl-table td {
+  padding: 5px 10px;
+  font-size: 12.5px;
+  color: #2d3a47;
+  border-right: 1px solid #edf0f3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wl-table td:last-child { border-right: none; }
+
+.wl-cell--mono { font-family: 'Courier New', monospace; font-size: 12px; }
+.wl-cell--name { font-weight: 500; }
+
+.wl-col-actions { width: 48px; text-align: center; }
+
+.wl-paid  { color: #198754; font-size: 12px; }
+.wl-debt  { color: #dc3545; font-weight: 600; font-size: 12px; }
+
+.wl-empty {
+  text-align: center;
+  color: #8a9ab0;
+  padding: 48px;
+  font-size: 13px;
+}
+
+/* ── Row action button ── */
+.wl-btn-icon {
+  width: 26px; height: 22px;
+  border: 1px solid #c8d0da;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  color: #5a6a7a;
+}
+.wl-btn-icon:hover { background: #e8edf3; }
+
+/* ── Dropdown menu ── */
+.wl-dropdown {
+  position: absolute;
+  right: 0; bottom: 100%;
+  background: #fff;
+  border: 1px solid #dde3ea;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 200;
+  min-width: 170px;
+}
+.wl-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  font-size: 12.5px;
+  color: #2d3a47;
+  cursor: pointer;
+}
+.wl-dropdown button:hover { background: #f0f4f8; }
+.wl-dropdown--danger { color: #dc3545 !important; }
+
+/* ── Pagination ── */
+.wl-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px;
+  border-top: 1px solid #dde3ea;
+  background: #f7f9fb;
+  flex-shrink: 0;
+}
+.wl-pagination button {
+  min-width: 28px; height: 26px;
+  padding: 0 8px;
+  border: 1px solid #c8d0da;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 12px;
+  color: #2d3a47;
+  cursor: pointer;
+}
+.wl-pagination button:hover:not(:disabled) { background: #e8f0fe; border-color: #0d6efd; color: #0d6efd; }
+.wl-pagination button:disabled { opacity: .4; cursor: default; }
+.wl-page--active { background: #0d6efd !important; color: #fff !important; border-color: #0d6efd !important; }
+
+/* dark theme */
+@media (prefers-color-scheme: dark) {
+  .wl-shell { background: #1a2030; border-color: #2d3a4f; }
+  .wl-toolbar { background: #151d2e; border-color: #2d3a4f; }
+  .wl-input, .wl-select { background: #1e2a3d; border-color: #3a4a60; color: #c8d8e8; }
+  .wl-btn-reset { background: #1e2a3d; border-color: #3a4a60; color: #8a9ab0; }
+  .wl-table thead tr { background: #151d2e; }
+  .wl-table th { color: #8a9ab0; border-color: #2d3a4f; }
+  .wl-table tbody tr { border-color: #212d40; }
+  .wl-table tbody tr:hover { background: #1e2d4a; }
+  .wl-table td { color: #c8d8e8; border-color: #212d40; }
+  .wl-table-wrap { background: #1a2030; }
+  .wl-pagination { background: #151d2e; border-color: #2d3a4f; }
+  .wl-pagination button { background: #1e2a3d; border-color: #3a4a60; color: #c8d8e8; }
+  .wl-dropdown { background: #1e2a3d; border-color: #3a4a60; }
+  .wl-dropdown button { color: #c8d8e8; }
+  .wl-dropdown button:hover { background: #263448; }
+  .wl-count { color: #6b7a8d; }
+}
 </style>
