@@ -68,7 +68,7 @@ class StudentController extends Controller
             $query->whereHas('enrollments');
         }
 
-        $query->with([
+        $query->select('students.*')->with([
             'currentEnrollment.schoolClass',
             'currentEnrollment.school',
             'guardians',
