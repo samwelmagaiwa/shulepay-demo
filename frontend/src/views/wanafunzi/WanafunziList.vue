@@ -703,17 +703,17 @@ onUnmounted(() => {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #f6f8fa !important;
+  background: #1a56db !important;
 }
 
 .wl-table th {
   padding: 5px 8px;
   font-size: 11px;
   font-weight: 600;
-  color: #57606a !important;
+  color: #ffffff !important;
   text-transform: uppercase;
   letter-spacing: .04em;
-  border-right: 1px solid #d8dee4;
+  border-right: 1px solid #3b6fe0;
   border-bottom: 2px solid #d0d7de;
   white-space: nowrap;
   text-align: left;
@@ -725,7 +725,7 @@ onUnmounted(() => {
 .wl-table th:hover { background: #eaeef2 !important; }
 
 .wl-sort {
-  color: #8c959f;
+  color: rgba(255,255,255,0.7);
   font-size: 10px;
   font-style: normal;
 }
