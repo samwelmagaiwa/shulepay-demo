@@ -72,6 +72,17 @@ class StudentController extends Controller
             'currentEnrollment.schoolClass',
             'currentEnrollment.school',
             'guardians',
+        ])->addSelect([
+            'outstanding_balance_cents' => \App\Models\Invoice::selectRaw(
+                'COALESCE(SUM(i.total_amount_cents - COALESCE(p.paid_sum, 0)), 0)'
+            )
+            ->from('invoices as i')
+            ->leftJoin(\Illuminate\Support\Facades\DB::raw(
+                '(SELECT invoice_id, SUM(amount_cents) as paid_sum FROM payments WHERE deleted_at IS NULL GROUP BY invoice_id) as p'
+            ), 'p.invoice_id', '=', 'i.id')
+            ->whereColumn('i.student_id', 'students.id')
+            ->whereNull('i.deleted_at')
+            ->whereIn('i.status', ['unpaid', 'partial']),
         ]);
 
         if ($request->filled('search')) {

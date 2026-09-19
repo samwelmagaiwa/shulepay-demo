@@ -96,10 +96,14 @@ class StudentResource extends JsonResource
                 fn () => InvoiceResource::collection($this->invoices)
             ),
 
-            'outstanding_balance_cents' => $this->when(
-                $this->relationLoaded('invoices'),
-                fn () => $this->outstandingBalanceCents()
-            ),
+            // When invoices are loaded (detail view), compute from the collection.
+            // When only the list subquery ran, the value is already on the model
+            // as a raw attribute — use it directly to avoid an N+1 load.
+            'outstanding_balance_cents' => $this->relationLoaded('invoices')
+                ? $this->outstandingBalanceCents()
+                : (isset($this->resource->outstanding_balance_cents)
+                    ? (int) $this->resource->outstanding_balance_cents
+                    : null),
 
             'created_at' => $this->created_at?->toISOString(),
         ];
