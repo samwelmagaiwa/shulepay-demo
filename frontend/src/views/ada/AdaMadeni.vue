@@ -186,10 +186,10 @@
             </div>
             <div class="am-cell">{{ group.primary.student?.school_class?.name || '—' }}</div>
             <div class="am-cell">{{ group.primary.term?.name || '—' }}</div>
-            <div class="am-cell">{{ formatMoney(group.primary.total_amount_cents) }}</div>
-            <div class="am-cell am-paid">{{ formatMoney(group.primary.paid_cents) }}</div>
-            <div class="am-cell" :class="group.primary.balance_due_cents > 0 ? 'am-debt' : 'am-zerodebt'">
-              {{ formatMoney(group.primary.balance_due_cents) }}
+            <div class="am-cell">{{ formatMoney(group.totalAmount) }}</div>
+            <div class="am-cell am-paid">{{ formatMoney(group.totalPaid) }}</div>
+            <div class="am-cell" :class="group.totalDebt > 0 ? 'am-debt' : 'am-zerodebt'">
+              {{ formatMoney(group.totalDebt) }}
             </div>
             <div class="am-cell"><StatusBadge :status="group.primary.status" /></div>
             <div class="am-cell am-actions-cell">
@@ -379,7 +379,10 @@ const groupedInvoices = computed(() => {
       const r = (statusRank[a.status] ?? 3) - (statusRank[b.status] ?? 3)
       return r !== 0 ? r : (b.balance_due_cents || 0) - (a.balance_due_cents || 0)
     })
-    return { primary: sorted[0], others: sorted.slice(1), studentId: sorted[0].student.id }
+    const totalDebt  = sorted.reduce((s, i) => s + (i.balance_due_cents  || 0), 0)
+    const totalPaid  = sorted.reduce((s, i) => s + (i.paid_cents          || 0), 0)
+    const totalAmount = sorted.reduce((s, i) => s + (i.total_amount_cents || 0), 0)
+    return { primary: sorted[0], others: sorted.slice(1), studentId: sorted[0].student.id, totalDebt, totalPaid, totalAmount }
   })
 })
 
