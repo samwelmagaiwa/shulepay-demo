@@ -190,7 +190,7 @@
                 <span v-for="t in group.debtTerms" :key="t.label"
                       :class="['am-term-badge', 'am-term-badge--' + t.status]">{{ t.label }}</span>
               </template>
-              <span v-else class="am-term-all-paid">✓ All paid</span>
+              <span v-else class="am-term-all-paid">✓ {{ locale === 'sw' ? 'Imelipwa' : 'All paid' }}</span>
             </div>
             <div class="am-cell">{{ formatMoney(group.totalAmount) }}</div>
             <div class="am-cell am-paid">{{ formatMoney(group.totalPaid) }}</div>
@@ -248,7 +248,7 @@ import OrphanedInvoicesModal from '@/components/OrphanedInvoicesModal.vue'
 import api                   from '@/services/api'
 import { printStudentStatement as printStudentStatementPdf, printBulkInvoices, cleanupReceiptFrame } from '@/utils/receipt'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const invoicesStore = useInvoicesStore()
 const schoolsStore  = useSchoolsStore()
 const schoolStore   = useSchoolStore()
@@ -367,16 +367,17 @@ const pageNumbers = computed(() => {
   return pages
 })
 
-// "FOURTH TERM" → "T4", "FIRST TERM" → "T1", "TERM 2" → "T2", etc.
+// "FOURTH TERM" → "T4" (EN) or "M4" (SW)
 function termShort(name) {
   if (!name) return '?'
-  const wordMap = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5 }
+  const prefix = locale.value === 'sw' ? 'M' : 'T'
+  const wordMap = { first: 1, kwanza: 1, second: 2, pili: 2, third: 3, tatu: 3, fourth: 4, nne: 4, fifth: 5, tano: 5 }
   const lower = name.toLowerCase()
   for (const [word, n] of Object.entries(wordMap)) {
-    if (lower.includes(word)) return 'T' + n
+    if (lower.includes(word)) return prefix + n
   }
   const m = lower.match(/\d+/)
-  return m ? 'T' + m[0] : name.slice(0, 2).toUpperCase()
+  return m ? prefix + m[0] : name.slice(0, 2).toUpperCase()
 }
 
 function formatMoney(cents) {
