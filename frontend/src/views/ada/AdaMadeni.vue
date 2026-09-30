@@ -185,7 +185,13 @@
               </CDropdown>
             </div>
             <div class="am-cell">{{ group.primary.student?.school_class?.name || '—' }}</div>
-            <div class="am-cell">{{ group.primary.term?.name || '—' }}</div>
+            <div class="am-cell am-term-cell">
+              <template v-if="group.debtTerms.length">
+                <span v-for="t in group.debtTerms" :key="t.label"
+                      :class="['am-term-badge', 'am-term-badge--' + t.status]">{{ t.label }}</span>
+              </template>
+              <span v-else class="am-term-all-paid">✓ All paid</span>
+            </div>
             <div class="am-cell">{{ formatMoney(group.totalAmount) }}</div>
             <div class="am-cell am-paid">{{ formatMoney(group.totalPaid) }}</div>
             <div class="am-cell" :class="group.totalDebt > 0 ? 'am-debt' : 'am-zerodebt'">
@@ -361,6 +367,18 @@ const pageNumbers = computed(() => {
   return pages
 })
 
+// "FOURTH TERM" → "T4", "FIRST TERM" → "T1", "TERM 2" → "T2", etc.
+function termShort(name) {
+  if (!name) return '?'
+  const wordMap = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5 }
+  const lower = name.toLowerCase()
+  for (const [word, n] of Object.entries(wordMap)) {
+    if (lower.includes(word)) return 'T' + n
+  }
+  const m = lower.match(/\d+/)
+  return m ? 'T' + m[0] : name.slice(0, 2).toUpperCase()
+}
+
 function formatMoney(cents) {
   return 'TZS ' + Number((cents || 0) / 100).toLocaleString('sw-TZ', { minimumFractionDigits: 0 })
 }
@@ -379,10 +397,14 @@ const groupedInvoices = computed(() => {
       const r = (statusRank[a.status] ?? 3) - (statusRank[b.status] ?? 3)
       return r !== 0 ? r : (b.balance_due_cents || 0) - (a.balance_due_cents || 0)
     })
-    const totalDebt  = sorted.reduce((s, i) => s + (i.balance_due_cents  || 0), 0)
-    const totalPaid  = sorted.reduce((s, i) => s + (i.paid_cents          || 0), 0)
-    const totalAmount = sorted.reduce((s, i) => s + (i.total_amount_cents || 0), 0)
-    return { primary: sorted[0], others: sorted.slice(1), studentId: sorted[0].student.id, totalDebt, totalPaid, totalAmount }
+    const totalDebt   = sorted.reduce((s, i) => s + (i.balance_due_cents  || 0), 0)
+    const totalPaid   = sorted.reduce((s, i) => s + (i.paid_cents          || 0), 0)
+    const totalAmount = sorted.reduce((s, i) => s + (i.total_amount_cents  || 0), 0)
+    // compact term labels for each invoice that still has debt
+    const debtTerms   = sorted
+      .filter(i => i.status !== 'paid')
+      .map(i => ({ label: termShort(i.term?.name), status: i.status }))
+    return { primary: sorted[0], others: sorted.slice(1), studentId: sorted[0].student.id, totalDebt, totalPaid, totalAmount, debtTerms }
   })
 })
 
@@ -679,6 +701,18 @@ onBeforeUnmount(() => {
 .am-paid     { color: #1b7a3e; }
 .am-debt     { color: #c62828; font-weight: 700; }
 .am-zerodebt { color: #1b7a3e; font-weight: 600; }
+
+/* ── Term badges ── */
+.am-term-cell { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; overflow: visible; }
+.am-term-badge {
+  display: inline-block; padding: 1px 6px; border-radius: 4px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.am-term-badge--unpaid  { background: #cf222e; color: #fff; }
+.am-term-badge--partial { background: #d97706; color: #fff; }
+.am-term-all-paid { font-size: 11px; color: #1b7a3e; font-weight: 600; }
+.am-row--selected .am-term-badge { opacity: .9; }
+.am-row--selected .am-term-all-paid { color: rgba(255,255,255,.9); }
 
 .am-student-cell { display: flex; align-items: center; gap: 4px; overflow: visible; }
 .am-more-dd      { flex-shrink: 0; }
