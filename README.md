@@ -179,6 +179,28 @@ To re-issue or check status: **aaPanel → Website → magrethschools.sc.tz → 
 
 ---
 
+## Languages (English / Kiswahili)
+
+The header language switch sets the language for the whole product, including the documents
+the server renders itself.
+
+| Where | How it follows the switch |
+|-------|---------------------------|
+| UI text | `frontend/src/i18n/en.js` + `sw.js` (vue-i18n). Both files must define the same keys. |
+| Language state | `setLocale()` in `frontend/src/i18n/index.js` — saved in `localStorage` and set on `<html lang>`. |
+| API → server | Every request carries `X-Locale: en\|sw` (`frontend/src/services/api.js`); a `?lang=` query parameter also works for plain links. |
+| Server side | `App\Http\Middleware\SetLocale` applies it. Wording lives in `backend/lang/{en,sw}/pdf.php` (receipts, statements, clearance certificate, report PDFs) and `enums.php` (payment method, invoice status, role and school-level labels). |
+| Dates | Use `intlLocale()` from `@/i18n` rather than a hardcoded `'sw-TZ'` / `'en-GB'` so month and weekday names switch too. |
+
+Adding a string: put it in **both** `en.js` and `sw.js` (never a bare literal in a template), and in
+**both** `lang/en/*.php` and `lang/sw/*.php` for anything printed by the server. Notes:
+
+- vue-i18n treats `@`, `{`, `}` and `|` specially — write a literal `@` as `{'@'}` (e.g. `email{'@'}example.com`).
+- School-entered data (term, class and academic-year names, fee item names) is printed exactly as entered and is not translated.
+- The clearance certificate is bilingual by design: the selected language leads and the other follows in italics.
+
+---
+
 ## License
 
 Proprietary — nexoryaTECH © 2026. All rights reserved.
