@@ -12,9 +12,8 @@
           <div v-if="branding.appTagline" style="font-size:.7rem; color:#555;">{{ branding.appTagline }}</div>
         </div>
       </div>
-      <div class="fw-bold text-center">{{ t('payments.receipt').toUpperCase() }}</div>
       <div style="border-top:2px solid #000; border-bottom:1px solid #000; margin:4px 0; padding:2px 0; text-align:center;">
-        PAYMENT RECEIPT
+        <span class="fw-bold">{{ t('payments.receipt').toUpperCase() }}</span>
       </div>
     </div>
 
@@ -75,7 +74,7 @@
     </div>
 
     <div style="border-top:2px solid #000; margin:6px 0;"></div>
-    <div class="text-center small" style="color:#555;">Asante kwa malipo yako &bull; Thank you</div>
+    <div class="text-center small" style="color:#555;">{{ t('payments.thankYou') }}</div>
   </div>
 </template>
 

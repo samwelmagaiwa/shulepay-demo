@@ -51,7 +51,7 @@
               <CTableDataCell>
                 {{ s.term?.name || '—' }}
                 <CBadge v-if="s.fee_mode === 'full_tuition'" color="info" class="ms-1" style="font-size:0.7rem;">
-                  Awamu {{ s.installment_number }}/{{ s.installments_count }}
+                  {{ t('students.drawer.phaseCount', { n: s.installment_number, total: s.installments_count }) }}
                 </CBadge>
               </CTableDataCell>
               <CTableDataCell>

@@ -62,7 +62,7 @@
               <CButton color="outline-success" size="sm" :disabled="issuing" @click="loadPreview" style="min-height:38px;">
                 <CSpinner v-if="issuing && !pdfUrl" size="sm" class="me-1" />
                 <CIcon v-else icon="cilMagnifyingGlass" class="me-1" />
-                Preview
+                {{ t('common.view') }}
               </CButton>
               <CButton color="success" size="sm" :disabled="issuing" @click="downloadCert" style="min-height:38px;">
                 <CSpinner v-if="issuing && pdfUrl" size="sm" class="me-1" />
