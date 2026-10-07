@@ -83,7 +83,7 @@ async function fetchData() {
     users.value   = usersRes.data.data ?? usersRes.data
     schools.value = schoolsRes.data.data ?? schoolsRes.data
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia data'
+    error.value = e?.response?.data?.message || t('errors.loadData')
   } finally {
     loading.value = false
   }
@@ -134,7 +134,7 @@ async function saveUser() {
     if (errs) {
       formError.value = Object.values(errs).flat().join(' | ')
     } else {
-      formError.value = e?.response?.data?.message || 'Hitilafu wakati wa kuhifadhi'
+      formError.value = e?.response?.data?.message || t('errors.save')
     }
   } finally {
     saving.value = false
@@ -175,7 +175,7 @@ async function grantAccess() {
     grantSchoolId.value = ''
     await fetchData()
   } catch (e) {
-    alert(e?.response?.data?.message || 'Hitilafu wakati wa kutoa ruhusa')
+    alert(e?.response?.data?.message || t('errors.grantPermission'))
   } finally {
     accessSaving.value = false
   }
@@ -188,7 +188,7 @@ async function revokeAccess(schoolId) {
     accessData.value = { ...accessData.value, ...data }
     await fetchData()
   } catch (e) {
-    alert(e?.response?.data?.message || 'Hitilafu wakati wa kuondoa ruhusa')
+    alert(e?.response?.data?.message || t('errors.revokePermission'))
   } finally {
     accessSaving.value = false
   }
@@ -216,7 +216,7 @@ async function deleteUser() {
   } catch (e) {
     const status = e?.response?.status
     if (status !== 404 && status !== 204) {
-      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kufuta'
+      error.value = e?.response?.data?.message || t('errors.delete')
     }
   } finally {
     await fetchData()

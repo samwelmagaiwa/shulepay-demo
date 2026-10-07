@@ -91,7 +91,7 @@
                     <CTableDataCell>{{ p.student_name || p.student || '—' }}</CTableDataCell>
                     <CTableDataCell>{{ fmtCents(p.amount_cents ?? p.amount) }}</CTableDataCell>
                     <CTableDataCell>{{ methodLabel(p.method) }}</CTableDataCell>
-                    <CTableDataCell>{{ p.paid_at ? new Date(p.paid_at).toLocaleDateString('sw-TZ') : '—' }}</CTableDataCell>
+                    <CTableDataCell>{{ p.paid_at ? new Date(p.paid_at).toLocaleDateString(intlLocale()) : '—' }}</CTableDataCell>
                   </CTableRow>
                 </CTableBody>
               </CTable>
@@ -121,6 +121,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { intlLocale } from '@/i18n'
 import { useDashboardStore } from '@/stores/dashboard'
 // Same figures as the locked dashboard cards, reached by different keys — masked
 // here too, or this page becomes the way around the lock.

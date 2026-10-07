@@ -38,7 +38,7 @@
                   <CButton size="sm" color="info" variant="outline"
                            style="font-size:.75rem; padding:2px 8px;"
                            @click.stop="toggleChildMenu(g, $event)">
-                    {{ g.students.length }} watoto ▾
+                    {{ g.students.length }} {{ t('guardians.children').toLowerCase() }} ▾
                   </CButton>
                   <Teleport to="body">
                     <div v-if="activeChildRow === g.id"
@@ -76,7 +76,7 @@
       <small class="text-medium-emphasis">
         {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
       </small>
-      <CPagination aria-label="Ukurasa" size="sm">
+      <CPagination :aria-label="t('common.page')" size="sm">
         <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; loadData()">{{ t('common.prev') }}</CPaginationItem>
         <CPaginationItem
           v-for="p in visiblePages"

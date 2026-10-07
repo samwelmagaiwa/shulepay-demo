@@ -104,6 +104,16 @@ const formatTrendDayLabel = (date) => {
   return `${day} ${weekday}`
 }
 
+// The chart logic keys off the English ids ('Today', 'Yesterday', '05 Mon'), so those
+// stay as they are; only what is *drawn* on the axis is translated.
+const WEEKDAY_KEYS = { Mon: 'mon', Tue: 'tue', Wed: 'wed', Thu: 'thu', Fri: 'fri', Sat: 'sat', Sun: 'sun' }
+const displayTrendLabel = (label) => {
+  if (label === 'Today') return t('dashboard.todayLabel')
+  if (label === 'Yesterday') return t('dashboard.yesterday')
+  const m = /^(\d{2}) (\w{3})$/.exec(String(label))
+  return m && WEEKDAY_KEYS[m[2]] ? `${m[1]} ${t(`common.weekdaysShort.${WEEKDAY_KEYS[m[2]]}`)}` : label
+}
+
 const rawTrendData = computed(() => dashboard.serviceTrendData || { labels: [], datasets: [] })
 
 const normalizedTrendData = computed(() => {
@@ -594,7 +604,8 @@ const chartOptions = computed(() => {
           padding: 12,
           callback: function (value) {
             const label = this.getLabelForValue(value)
-            return label === 'Today' || label === 'Yesterday' ? [label, ' '] : label
+            const shown = displayTrendLabel(label)
+            return label === 'Today' || label === 'Yesterday' ? [shown, ' '] : shown
           },
         },
       },
@@ -649,7 +660,7 @@ const chartOptions = computed(() => {
           </div>
           <div v-if="dashboard.remoteApiAvailable === false && dashboard.isOfflineUIReported" class="d-flex align-items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-pill shadow-sm">
             <div class="spinner-grow spinner-grow-sm text-amber-500" role="status" style="width: 8px; height: 8px;"></div>
-            <span class="fw-bold text-amber-700" style="font-size: 11px; letter-spacing: 0.5px">RECONNECTING... (CACHED)</span>
+            <span class="fw-bold text-amber-700" style="font-size: 11px; letter-spacing: 0.5px">{{ t('dashboard.reconnecting') }}</span>
           </div>
           <div
             class="premium-stat-pill d-flex align-items-center shadow-sm border-primary-subtle bg-white"
@@ -672,7 +683,7 @@ const chartOptions = computed(() => {
             class="facilities-badge shadow-sm"
             style="font-size: 11px; padding: 4px 12px"
           >
-            {{ referralData.length }} Shule
+            {{ referralData.length }} {{ t('nav.schools') }}
           </CBadge>
         </div>
       </div>
@@ -704,7 +715,7 @@ const chartOptions = computed(() => {
             </div>
           </div>
 
-          <div v-if="dashboard.isSyncing" class="sync-indicator-mini" title="Background syncing in progress...">
+          <div v-if="dashboard.isSyncing" class="sync-indicator-mini" :title="t('dashboard.syncing')">
             <div class="spinner-border spinner-border-sm text-primary" style="width: 0.8rem; height: 0.8rem;"></div>
           </div>
 
@@ -772,7 +783,7 @@ const chartOptions = computed(() => {
                       ]"
                     >
                       <td class="py-2 position-relative">
-                        <div v-if="index === 0" class="top-badge" style="top: -2px; left: 10px;">TOP #1</div>
+                        <div v-if="index === 0" class="top-badge" style="top: -2px; left: 10px;">{{ t('dashboard.top1') }}</div>
                         <div class="d-flex align-items-center gap-2">
                           <span
                             v-if="hosp.name && hosp.name.trim()"
@@ -786,9 +797,9 @@ const chartOptions = computed(() => {
                             v-else
                             class="facility-code-name fw-semibold text-muted"
                             style="font-size: 12px"
-                            :title="'Facility ' + hosp.code"
+                            :title="t('dashboard.schoolFallback', { code: hosp.code })"
                           >
-                            Facility {{ hosp.code }}
+                            {{ t('dashboard.schoolFallback', { code: hosp.code }) }}
                           </span>
                         </div>
                       </td>
@@ -841,7 +852,7 @@ const chartOptions = computed(() => {
                 class="d-flex flex-column align-items-center justify-content-center py-5 opacity-50"
               >
                 <CIcon :icon="cilHospital" size="xl" class="mb-2" />
-                <p class="small">Hakuna data ya ankara iliyopatikana</p>
+                <p class="small">{{ t('dashboard.noInvoiceData') }}</p>
               </div>
             </div>
           </div>

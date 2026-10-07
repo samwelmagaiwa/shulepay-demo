@@ -56,7 +56,7 @@
           </select>
           <span class="am-count">{{ t('common.perPage') }}</span>
           <button class="am-filter-btn" :class="{ active: showFilters || hasActiveFilters }" @click.stop="showFilters = !showFilters">
-            ☰ Filter<span v-if="hasActiveFilters" class="am-filter-dot"></span>
+            ☰ {{ t('common.filter') }}<span v-if="hasActiveFilters" class="am-filter-dot"></span>
           </button>
         </div>
         <div class="am-topbar-right">
@@ -190,7 +190,7 @@
                 <span v-for="t in group.debtTerms" :key="t.label"
                       :class="['am-term-badge', 'am-term-badge--' + t.status]">{{ t.label }}</span>
               </template>
-              <span v-else class="am-term-all-paid">✓ {{ locale === 'sw' ? 'Imelipwa' : 'All paid' }}</span>
+              <span v-else class="am-term-all-paid">✓ {{ t('invoices.allPaid') }}</span>
             </div>
             <div class="am-cell">{{ formatMoney(group.totalAmount) }}</div>
             <div class="am-cell am-paid">{{ formatMoney(group.totalPaid) }}</div>
@@ -199,7 +199,7 @@
             </div>
             <div class="am-cell"><StatusBadge :status="group.primary.status" /></div>
             <div class="am-cell am-actions-cell">
-              <button class="am-dots-btn" @click.stop="openActionMenu(group.primary, group.studentId, $event)" title="Actions">⋮</button>
+              <button class="am-dots-btn" @click.stop="openActionMenu(group.primary, group.studentId, $event)" :title="t('common.actions')">⋮</button>
             </div>
           </div>
           <div v-if="groupedInvoices.length === 0" class="am-empty">{{ t('invoices.noInvoices') }}</div>

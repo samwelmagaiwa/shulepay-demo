@@ -14,7 +14,7 @@
       </div>
       <div class="fw-bold text-center">{{ t('payments.receipt').toUpperCase() }}</div>
       <div style="border-top:2px solid #000; border-bottom:1px solid #000; margin:4px 0; padding:2px 0; text-align:center;">
-        PAYMENT RECEIPT
+        {{ t('receiptPreview.title') }}
       </div>
     </div>
 
@@ -46,11 +46,11 @@
       <span>{{ fmtTzs(data.total_tzs) }}</span>
     </div>
     <div class="d-flex justify-content-between small mb-1">
-      <span>{{ t('invoices.amountPaid') }} ({{ t('payments.before') || 'before' }}):</span>
+      <span>{{ t('receiptPreview.paidBefore') }}:</span>
       <span class="text-success" style="color:#198754 !important;">{{ fmtTzs(data.paid_before_tzs) }}</span>
     </div>
     <div class="d-flex justify-content-between small mb-1">
-      <span>{{ t('payments.balanceDue') }} ({{ t('payments.before') || 'before' }}):</span>
+      <span>{{ t('receiptPreview.balanceBefore') }}:</span>
       <span style="color:#dc3545;">{{ fmtTzs(data.balance_before_tzs) }}</span>
     </div>
 
@@ -58,7 +58,7 @@
 
     <!-- Payment being made -->
     <div class="d-flex justify-content-between mb-1">
-      <span class="small">{{ t('payments.amount') }} {{ t('payments.paid') || 'Paid' }}:</span>
+      <span class="small">{{ t('receiptPreview.amountPaid') }}:</span>
       <span class="fw-bold" style="font-size:1.15rem;">{{ fmtTzs(data.amount_tzs) }}</span>
     </div>
     <div class="small mb-1"><strong>{{ t('payments.method') }}:</strong> {{ methodLabel(data.method) }}</div>
@@ -68,14 +68,14 @@
 
     <!-- Remaining balance -->
     <div class="d-flex justify-content-between small mb-1">
-      <span>{{ t('payments.balanceDue') }} ({{ t('payments.after') || 'after' }}):</span>
+      <span>{{ t('receiptPreview.balanceAfter') }}:</span>
       <span class="fw-bold" :style="{ color: (data.balance_after_tzs || 0) === 0 ? '#198754' : '#dc3545' }">
         {{ fmtTzs(data.balance_after_tzs) }}
       </span>
     </div>
 
     <div style="border-top:2px solid #000; margin:6px 0;"></div>
-    <div class="text-center small" style="color:#555;">Asante kwa malipo yako &bull; Thank you</div>
+    <div class="text-center small" style="color:#555;">{{ t('receiptPreview.thankYou') }}</div>
   </div>
 </template>
 

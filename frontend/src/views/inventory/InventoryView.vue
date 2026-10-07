@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { intlLocale } from '@/i18n'
 import { useInventoryStore }  from '@/stores/inventory'
 import { useSchoolsStore }    from '@/stores/schools'
 import { useSchoolStore }     from '@/stores/school'
@@ -400,7 +401,7 @@ async function submitAsset() {
     await store.fetchSummary()
   } catch (e) {
     const errors = e?.response?.data?.errors
-    formError.value = errors ? Object.values(errors).flat().join(' ') : (e?.response?.data?.message || 'Imeshindwa. Jaribu tena.')
+    formError.value = errors ? Object.values(errors).flat().join(' ') : (e?.response?.data?.message || t('errors.tryAgain'))
   } finally {
     saving.value = false
   }
@@ -417,7 +418,7 @@ async function doDispose() {
     showDisposeModal.value = false
     await loadAssets()
   } catch (e) {
-    disposeError.value = e?.response?.data?.message || 'Imeshindwa. Jaribu tena.'
+    disposeError.value = e?.response?.data?.message || t('errors.tryAgain')
   } finally {
     disposing.value = false
   }
@@ -606,7 +607,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
                 <CTableDataCell>{{ i + 1 }}</CTableDataCell>
                 <CTableDataCell>
                   <span class="fw-semibold">{{ item.name }}</span>
-                  <span v-if="item.is_low_stock" class="ms-2 text-danger" title="Inakwisha">⚠️</span>
+                  <span v-if="item.is_low_stock" class="ms-2 text-danger" :title="t('inventory.lowStockTitle')">⚠️</span>
                 </CTableDataCell>
                 <CTableDataCell>{{ item.unit }}</CTableDataCell>
                 <CTableDataCell :class="item.is_low_stock ? 'text-danger fw-bold' : ''">{{ Number(item.quantity).toLocaleString() }}</CTableDataCell>
@@ -891,7 +892,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
             </CTableHead>
             <CTableBody>
               <CTableRow v-for="txn in itemTransactions" :key="txn.id">
-                <CTableDataCell>{{ txn.transaction_date ? new Date(txn.transaction_date).toLocaleDateString('en-GB') : '—' }}</CTableDataCell>
+                <CTableDataCell>{{ txn.transaction_date ? new Date(txn.transaction_date).toLocaleDateString(intlLocale()) : '—' }}</CTableDataCell>
                 <CTableDataCell><CBadge :color="txnTypeBadge(txn.type)">{{ txnTypeLabel(txn.type) }}</CBadge></CTableDataCell>
                 <CTableDataCell>{{ Number(txn.quantity).toLocaleString() }}</CTableDataCell>
                 <CTableDataCell>
@@ -947,7 +948,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
               </CTableHead>
               <CTableBody>
                 <CTableRow v-for="txn in row.transactions" :key="txn.id">
-                  <CTableDataCell>{{ txn.transaction_date ? new Date(txn.transaction_date).toLocaleDateString('en-GB') : '—' }}</CTableDataCell>
+                  <CTableDataCell>{{ txn.transaction_date ? new Date(txn.transaction_date).toLocaleDateString(intlLocale()) : '—' }}</CTableDataCell>
                   <CTableDataCell>{{ Number(txn.quantity).toLocaleString() }}</CTableDataCell>
                   <CTableDataCell class="text-muted small">{{ txn.notes || txn.reference || '—' }}</CTableDataCell>
                   <CTableDataCell class="text-muted small">{{ txn.recorder?.name || '—' }}</CTableDataCell>
@@ -976,7 +977,7 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
       </CModalHeader>
       <CModalBody v-if="detailAsset">
         <div v-if="detailAsset.photo_url" class="mb-3 text-center">
-          <img :src="detailAsset.photo_url" class="img-fluid rounded" style="max-height:200px;" alt="Picha ya mali" />
+          <img :src="detailAsset.photo_url" class="img-fluid rounded" style="max-height:200px;" :alt="t('inventory.assetPhotoAlt')" />
         </div>
 
         <h6 class="text-primary fw-bold border-bottom pb-1 mb-2">{{ t('assets.detail.identity') }}</h6>
@@ -1064,9 +1065,9 @@ function canDelete(a)  { return ['disposed', 'lost', 'written_off'].includes(a.s
             <CCol xs="12" md="6">
               <label class="form-label fw-semibold">{{ t('assets.assetTag') }} *</label>
               <div class="input-group">
-                <CFormInput v-model="form.asset_tag" placeholder="mfano: MSG-AST-001" style="min-height:44px;" />
+                <CFormInput v-model="form.asset_tag" :placeholder="t('inventory.assetTagExample')" style="min-height:44px;" />
                 <CButton color="outline-secondary" @click="autoFillTag" :disabled="loadingTag" style="min-height:44px;">
-                  <CSpinner v-if="loadingTag" size="sm" /><span v-else>Auto</span>
+                  <CSpinner v-if="loadingTag" size="sm" /><span v-else>{{ t('common.themeAuto') }}</span>
                 </CButton>
               </div>
             </CCol>

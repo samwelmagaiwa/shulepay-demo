@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
+import LanguageSwitch from '@/components/LanguageSwitch.vue'
 
 const { t } = useI18n()
 const auth         = useAuthStore()
@@ -43,7 +44,7 @@ async function handleLogin() {
   errorMessage.value = ''
 
   if (!email.value || !password.value) {
-    errorMessage.value = 'Tafadhali jaza barua pepe na neno la siri.'
+    errorMessage.value = t('auth.errorEmpty')
     return
   }
 
@@ -319,6 +320,7 @@ async function handleLogin() {
     <div class="login-overlay"></div>
 
     <div class="login-card-wrapper">
+      <div class="login-lang"><LanguageSwitch /></div>
       <div class="login-card">
         <div class="login-header">
           <div class="logo-wrapper">
@@ -442,6 +444,7 @@ async function handleLogin() {
   width: 100%; max-width: 460px; padding: 20px;
   animation: fadeIn .6s ease-out;
 }
+.login-lang { display: flex; justify-content: flex-end; margin-bottom: .75rem; color: #fff; }
 .login-card {
   background: rgba(255,255,255,.1);
   backdrop-filter: blur(20px);

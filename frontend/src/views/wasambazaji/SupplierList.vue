@@ -45,7 +45,7 @@
         <small class="text-medium-emphasis">
           {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
         </small>
-        <CPagination aria-label="Page" size="sm">
+        <CPagination :aria-label="t('common.page')" size="sm">
           <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
           <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
           <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
@@ -104,7 +104,7 @@
         <small class="text-medium-emphasis">
           {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
         </small>
-        <CPagination aria-label="Page" size="sm">
+        <CPagination :aria-label="t('common.page')" size="sm">
           <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; load()">{{ t('common.first') }}</CPaginationItem>
           <CPaginationItem v-for="p in visiblePages" :key="p" :active="p === meta.current_page" @click="page = p; load()">{{ p }}</CPaginationItem>
           <CPaginationItem :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; load()">{{ t('common.last') }}</CPaginationItem>
@@ -233,7 +233,7 @@
           <label class="form-label fw-semibold">{{ t('common.paymentMethod') }} <span class="text-danger">*</span></label>
           <CFormSelect v-model="payForm.method" style="min-height:44px;">
             <option value="cash">{{ t('common.cash') }}</option>
-            <option value="mpesa">M-Pesa</option>
+            <option value="mpesa">{{ t('common.mpesa') }}</option>
             <option value="bank">{{ t('common.bank') }}</option>
             <option value="cheque">{{ t('common.cheque') }}</option>
           </CFormSelect>

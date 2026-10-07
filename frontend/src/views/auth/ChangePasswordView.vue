@@ -2,6 +2,7 @@
   <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
     <CCard style="width:100%; max-width:420px;" class="shadow border-0">
       <CCardBody class="p-4">
+        <div class="d-flex justify-content-end mb-2"><LanguageSwitch on-light /></div>
         <div class="text-center mb-4">
           <div style="font-size:2rem;">🔐</div>
           <h5 class="fw-bold mb-1">{{ t('changePassword.title') }}</h5>
@@ -60,6 +61,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
+import LanguageSwitch from '@/components/LanguageSwitch.vue'
 
 const { t } = useI18n()
 const router = useRouter()

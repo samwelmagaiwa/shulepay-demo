@@ -92,7 +92,7 @@
               <CCol sm="6" v-if="form.method !== 'cash'">
                 <label class="form-label fw-semibold">{{ t('payments.reference') }} <span class="text-danger">*</span></label>
                 <CFormInput v-model="form.reference_number"
-                  :placeholder="form.method === 'mpesa' ? 'e.g. QHX123456' : 'e.g. BENKI-0001234'"
+                  :placeholder="form.method === 'mpesa' ? t('payments.refExampleMpesa') : t('payments.refExampleBank')"
                   :disabled="saving" />
               </CCol>
 
@@ -138,13 +138,13 @@
                 <div class="fw-bold fs-6">{{ lastPayment.student?.full_name || lastPayment.student_name }}</div>
                 <div class="small text-muted mt-1 d-flex flex-wrap gap-3">
                   <span v-if="lastPayment.student?.admission_number">
-                    Namba: <strong>{{ lastPayment.student.admission_number }}</strong>
+                    {{ t('rekoda.numberLabel') }} <strong>{{ lastPayment.student.admission_number }}</strong>
                   </span>
                   <span v-if="lastPayment.student?.school_class?.name">
-                    Darasa: <strong>{{ lastPayment.student.school_class.name }}</strong>
+                    {{ t('rekoda.classLabel') }} <strong>{{ lastPayment.student.school_class.name }}</strong>
                   </span>
                   <span v-if="lastPayment.student?.school?.name">
-                    Shule: <strong>{{ lastPayment.student.school.name }}</strong>
+                    {{ t('rekoda.schoolLabel') }} <strong>{{ lastPayment.student.school.name }}</strong>
                   </span>
                 </div>
               </div>
@@ -152,25 +152,25 @@
               <!-- Invoice details -->
               <div class="px-3 py-2 border-bottom">
                 <div class="mb-1">
-                  <span class="badge bg-secondary-subtle text-secondary" style="font-size:.7rem;">Ankara</span>
+                  <span class="badge bg-secondary-subtle text-secondary" style="font-size:.7rem;">{{ t('rekoda.invoiceBadge') }}</span>
                 </div>
                 <div class="row g-1 small">
-                  <div class="col-6 text-muted">Namba ya Ankara</div>
+                  <div class="col-6 text-muted">{{ t('rekoda.invoiceNumber') }}</div>
                   <div class="col-6 fw-semibold text-end">{{ lastPayment.invoice?.invoice_number }}</div>
 
-                  <div class="col-6 text-muted">Muhula</div>
+                  <div class="col-6 text-muted">{{ t('common.term') }}</div>
                   <div class="col-6 fw-semibold text-end">{{ lastPayment.invoice?.term || '—' }}</div>
 
-                  <div v-if="lastPayment.invoice?.academic_year" class="col-6 text-muted">Mwaka</div>
+                  <div v-if="lastPayment.invoice?.academic_year" class="col-6 text-muted">{{ t('common.year') }}</div>
                   <div v-if="lastPayment.invoice?.academic_year" class="col-6 fw-semibold text-end">{{ lastPayment.invoice.academic_year }}</div>
 
-                  <div class="col-6 text-muted">Jumla ya Ada</div>
+                  <div class="col-6 text-muted">{{ t('rekoda.totalFees') }}</div>
                   <div class="col-6 fw-semibold text-end">{{ formatMoney(lastPayment.invoice?.total_amount_cents) }}</div>
 
-                  <div class="col-6 text-muted">Kilicholipwa Kabla</div>
+                  <div class="col-6 text-muted">{{ t('rekoda.paidBefore') }}</div>
                   <div class="col-6 fw-semibold text-success text-end">{{ formatMoney((lastPayment.invoice?.paid_cents || 0) - lastPayment.amount_cents) }}</div>
 
-                  <div class="col-6 text-muted">Mdeni Uliobaki</div>
+                  <div class="col-6 text-muted">{{ t('rekoda.remainingBalance') }}</div>
                   <div class="col-6 fw-bold text-end" :class="(lastPayment.invoice?.balance_due_cents || 0) <= 0 ? 'text-success' : 'text-danger'">
                     {{ formatMoney(lastPayment.invoice?.balance_due_cents) }}
                   </div>
@@ -180,7 +180,7 @@
               <!-- Payment details -->
               <div class="px-3 py-2 border-bottom">
                 <div class="mb-1">
-                  <span class="badge bg-success-subtle text-success" style="font-size:.7rem;">Malipo ya Sasa</span>
+                  <span class="badge bg-success-subtle text-success" style="font-size:.7rem;">{{ t('rekoda.currentPayment') }}</span>
                 </div>
                 <div class="row g-1 small">
                   <div class="col-6 text-muted">{{ t('common.amount') }}</div>
@@ -190,13 +190,13 @@
                   <div class="col-6 fw-semibold text-end">{{ methodMap[lastPayment.method] || lastPayment.method }}</div>
 
                   <template v-if="lastPayment.reference_number">
-                    <div class="col-6 text-muted">Kumb. Namba</div>
+                    <div class="col-6 text-muted">{{ t('rekoda.refNumber') }}</div>
                     <div class="col-6 fw-semibold text-end">{{ lastPayment.reference_number }}</div>
                   </template>
 
                   <div class="col-6 text-muted">{{ t('common.date') }}</div>
                   <div class="col-6 fw-semibold text-end">
-                    {{ lastPayment.paid_at ? new Date(lastPayment.paid_at).toLocaleDateString('sw-TZ') : '—' }}
+                    {{ lastPayment.paid_at ? new Date(lastPayment.paid_at).toLocaleDateString(intlLocale()) : '—' }}
                   </div>
 
                   <div class="col-6 text-muted">{{ t('payments.receiptNo') }}</div>
@@ -207,7 +207,7 @@
               <!-- Guardians -->
               <div v-if="lastPayment.student?.guardians?.length" class="px-3 py-2">
                 <div class="mb-1">
-                  <span class="badge bg-info-subtle text-info" style="font-size:.7rem;">Walezi</span>
+                  <span class="badge bg-info-subtle text-info" style="font-size:.7rem;">{{ t('guardians.title') }}</span>
                 </div>
                 <div v-for="g in lastPayment.student.guardians" :key="g.phone" class="small d-flex justify-content-between">
                   <span class="text-muted">{{ g.name }}<span v-if="g.relationship"> ({{ g.relationship }})</span></span>
@@ -231,10 +231,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePaymentsStore } from '@/stores/payments'
 import api from '@/services/api'
+import { intlLocale } from '@/i18n'
 
 const { t } = useI18n()
 const paymentsStore = usePaymentsStore()
@@ -250,9 +251,19 @@ const saving         = ref(false)
 const formError      = ref('')
 
 const form = ref({ amount_tzs: '', method: 'cash', reference_number: '', notes: '', paid_at: today })
-const amountPlaceholder = ref('e.g. 50000')
+const maxHintTzs = ref(null)
+const amountPlaceholder = computed(() =>
+  maxHintTzs.value === null
+    ? t('payments.amountExample')
+    : t('payments.maxTzs', { amount: maxHintTzs.value.toLocaleString() })
+)
 
-const methodMap = { cash: 'Cash', mpesa: 'M-Pesa', bank: 'Bank Transfer', cheque: 'Cheque' }
+const methodMap = computed(() => ({
+  cash: t('payments.methods.cash'),
+  mpesa: t('payments.methods.mpesa'),
+  bank: t('payments.methods.bank'),
+  cheque: t('payments.methods.cheque'),
+}))
 
 function formatMoney(cents) {
   return 'TZS ' + Math.round((cents || 0) / 100).toLocaleString('sw-TZ', { maximumFractionDigits: 0 })
@@ -285,7 +296,7 @@ function selectInvoice(inv) {
   form.value.amount_tzs = ''
   // Focus the amount input on next tick
   const maxTzs = Math.round((inv.balance_due_cents || 0) / 100)
-  amountPlaceholder.value = `Max: ${maxTzs.toLocaleString()} TZS`
+  maxHintTzs.value = maxTzs
 }
 
 function clearInvoice() {

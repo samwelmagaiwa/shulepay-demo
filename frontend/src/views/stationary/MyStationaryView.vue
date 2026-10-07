@@ -113,6 +113,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { intlLocale } from '@/i18n'
 import api from '@/services/api'
 
 const { t } = useI18n()
@@ -148,7 +149,7 @@ function statusColor(s) {
   return { pending: 'warning', approved: 'info', provided: 'success', rejected: 'danger' }[s] ?? 'secondary'
 }
 function fmtDate(d) {
-  return d ? new Date(d).toLocaleDateString('sw-TZ', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
+  return d ? new Date(d).toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
 }
 
 async function load() {

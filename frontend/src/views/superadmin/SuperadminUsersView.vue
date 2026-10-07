@@ -1,6 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const users       = ref([])
@@ -78,7 +82,7 @@ async function load() {
     allRoles.value = rolesRes.data.roles ?? []
     allPermGrps.value = rolesRes.data.all_permissions ?? {}
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Failed to load data'
+    error.value = e?.response?.data?.message || t('superadminUsers.errors.load')
   } finally {
     loading.value = false
   }
@@ -131,7 +135,7 @@ async function saveUser() {
     const errs = e?.response?.data?.errors
     formError.value = errs
       ? Object.values(errs).flat().join(' | ')
-      : (e?.response?.data?.message || 'Failed to save')
+      : (e?.response?.data?.message || t('superadminUsers.errors.save'))
   } finally {
     saving.value = false
   }
@@ -160,7 +164,7 @@ async function doDeactivate() {
     showDeactivate.value = false
     await load()
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Failed to deactivate'
+    error.value = e?.response?.data?.message || t('superadminUsers.errors.deactivate')
     showDeactivate.value = false
   } finally {
     deactivating.value = false
@@ -172,7 +176,7 @@ async function doReactivate(user) {
     await api.post(`/superadmin/users/${user.id}/reactivate`)
     await load()
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Failed to reactivate'
+    error.value = e?.response?.data?.message || t('superadminUsers.errors.reactivate')
   }
 }
 
@@ -206,7 +210,7 @@ async function saveEditorPerms() {
     showPerms.value = false
     await load()
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Failed to save permissions'
+    error.value = e?.response?.data?.message || t('superadminUsers.errors.savePermissions')
   } finally {
     savingPerms.value = false
   }
@@ -242,7 +246,7 @@ async function saveRestrict() {
     showRestrict.value = false
     await load()
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Failed to save restrictions'
+    error.value = e?.response?.data?.message || t('superadminUsers.errors.saveRestrictions')
     showRestrict.value = false
   } finally {
     savingRestrict.value = false
@@ -269,7 +273,7 @@ async function doDelete() {
     confirmDelete.value = null
     await load()
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Failed to delete'
+    error.value = e?.response?.data?.message || t('superadminUsers.errors.delete')
     confirmDelete.value = null
   }
 }
@@ -291,10 +295,10 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
       <div>
-        <h4 class="mb-0 fw-bold">👤 User Management</h4>
-        <p class="text-muted small mb-0">Create users, assign roles & permissions, freeze/unfreeze accounts</p>
+        <h4 class="mb-0 fw-bold">{{ t('superadminUsers.title') }}</h4>
+        <p class="text-muted small mb-0">{{ t('superadminUsers.subtitle') }}</p>
       </div>
-      <CButton color="success" @click="openCreate" style="min-height:44px;">+ Add User</CButton>
+      <CButton color="success" @click="openCreate" style="min-height:44px;">{{ t('superadminUsers.addUser') }}</CButton>
     </div>
 
     <!-- Summary cards -->
@@ -303,7 +307,7 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
         <CCard class="border-0 shadow-sm">
           <CCardBody class="p-3 text-center">
             <div class="fw-bold fs-4">{{ users.length }}</div>
-            <div class="text-muted small">Total Users</div>
+            <div class="text-muted small">{{ t('superadminUsers.totalUsers') }}</div>
           </CCardBody>
         </CCard>
       </CCol>
@@ -311,7 +315,7 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
         <CCard class="border-0 shadow-sm" style="border-left:3px solid #198754 !important;">
           <CCardBody class="p-3 text-center">
             <div class="fw-bold fs-4 text-success">{{ totalActive }}</div>
-            <div class="text-muted small">Active</div>
+            <div class="text-muted small">{{ t('superadminUsers.active') }}</div>
           </CCardBody>
         </CCard>
       </CCol>
@@ -319,7 +323,7 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
         <CCard class="border-0 shadow-sm" style="border-left:3px solid #dc3545 !important;">
           <CCardBody class="p-3 text-center">
             <div class="fw-bold fs-4 text-danger">{{ totalFrozen }}</div>
-            <div class="text-muted small">Frozen</div>
+            <div class="text-muted small">{{ t('superadminUsers.frozen') }}</div>
           </CCardBody>
         </CCard>
       </CCol>
@@ -327,7 +331,7 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
         <CCard class="border-0 shadow-sm">
           <CCardBody class="p-3 text-center">
             <div class="fw-bold fs-4">{{ schools.length }}</div>
-            <div class="text-muted small">Schools</div>
+            <div class="text-muted small">{{ t('nav.schools') }}</div>
           </CCardBody>
         </CCard>
       </CCol>
@@ -336,19 +340,19 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
     <!-- Filters -->
     <CRow class="g-2 mb-3">
       <CCol md="4">
-        <CFormInput v-model="filterSearch" placeholder="Search by name or email..." />
+        <CFormInput v-model="filterSearch" :placeholder="t('superadminUsers.searchPlaceholder')" />
       </CCol>
       <CCol md="3">
         <CFormSelect v-model="filterRole">
-          <option value="">All Roles</option>
+          <option value="">{{ t('staff.allRoles') }}</option>
           <option v-for="r in allRoles" :key="r.id" :value="r.name">{{ r.name }}</option>
         </CFormSelect>
       </CCol>
       <CCol md="3">
         <CFormSelect v-model="filterActive">
-          <option value="">All Status</option>
-          <option value="true">Active</option>
-          <option value="false">Frozen</option>
+          <option value="">{{ t('superadminUsers.allStatus') }}</option>
+          <option value="true">{{ t('superadminUsers.active') }}</option>
+          <option value="false">{{ t('superadminUsers.frozen') }}</option>
         </CFormSelect>
       </CCol>
     </CRow>
@@ -363,12 +367,12 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
           <CTable hover class="align-middle mb-0">
             <CTableHead class="table-dark">
               <CTableRow>
-                <CTableHeaderCell>User</CTableHeaderCell>
-                <CTableHeaderCell>Role</CTableHeaderCell>
-                <CTableHeaderCell>School</CTableHeaderCell>
-                <CTableHeaderCell class="text-center">Permissions</CTableHeaderCell>
-                <CTableHeaderCell class="text-center">Status</CTableHeaderCell>
-                <CTableHeaderCell class="text-center">Actions</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('audit.user') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('staff.role') }}</CTableHeaderCell>
+                <CTableHeaderCell>{{ t('common.school') }}</CTableHeaderCell>
+                <CTableHeaderCell class="text-center">{{ t('superadminUsers.permissions') }}</CTableHeaderCell>
+                <CTableHeaderCell class="text-center">{{ t('common.status') }}</CTableHeaderCell>
+                <CTableHeaderCell class="text-center">{{ t('common.actions') }}</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -396,13 +400,13 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
                   </CButton>
                   <div v-if="u.forbidden_permissions?.length" class="mt-1">
                     <CBadge color="danger" style="font-size:.68rem;">
-                      🚫 {{ u.forbidden_permissions.length }} restricted
+                      🚫 {{ u.forbidden_permissions.length }} {{ t('superadminUsers.restricted') }}
                     </CBadge>
                   </div>
                 </CTableDataCell>
                 <CTableDataCell class="text-center">
                   <CBadge :color="u.is_active ? 'success' : 'danger'" class="px-3 py-1">
-                    {{ u.is_active ? '✓ Active' : '🔒 Frozen' }}
+                    {{ u.is_active ? t('superadminUsers.activeBadge') : t('superadminUsers.frozenBadge') }}
                   </CBadge>
                   <div v-if="!u.is_active && u.deactivation_reason" class="text-muted mt-1" style="font-size:.7rem; max-width:120px; margin:0 auto; white-space:normal;">
                     {{ u.deactivation_reason }}
@@ -410,36 +414,36 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
                 </CTableDataCell>
                 <CTableDataCell>
                   <div class="d-flex gap-1 justify-content-center flex-wrap">
-                    <CButton size="sm" color="warning" variant="ghost" title="Edit" @click="openEdit(u)">✏️</CButton>
+                    <CButton size="sm" color="warning" variant="ghost" :title="t('common.edit')" @click="openEdit(u)">✏️</CButton>
                     <CButton
                       v-if="u.is_active && !u.roles?.some(r=>r.name==='superadmin')"
                       size="sm" color="danger" variant="ghost"
-                      title="Freeze account"
+                      :title="t('superadminUsers.freezeTip')"
                       @click="openDeactivate(u)"
                     >🔒</CButton>
                     <CButton
                       v-if="!u.is_active"
                       size="sm" color="success" variant="ghost"
-                      title="Unfreeze account"
+                      :title="t('superadminUsers.unfreezeTip')"
                       @click="doReactivate(u)"
                     >🔓</CButton>
                     <CButton
                       v-if="!u.roles?.some(r=>r.name==='superadmin')"
                       size="sm" color="warning" variant="ghost"
-                      title="Restrict permissions"
+                      :title="t('superadminUsers.restrictTip')"
                       @click="openRestrict(u)"
                     >🚫</CButton>
                     <CButton
                       v-if="!u.roles?.some(r=>r.name==='superadmin')"
                       size="sm" color="danger" variant="ghost"
-                      title="Delete user"
+                      :title="t('superadminUsers.deleteTip')"
                       @click="confirmDelete = u"
                     >🗑️</CButton>
                   </div>
                 </CTableDataCell>
               </CTableRow>
               <CTableRow v-if="!filtered.length">
-                <CTableDataCell colspan="6" class="text-center text-muted py-4">No users found</CTableDataCell>
+                <CTableDataCell colspan="6" class="text-center text-muted py-4">{{ t('superadminUsers.noUsers') }}</CTableDataCell>
               </CTableRow>
             </CTableBody>
           </CTable>
@@ -450,48 +454,48 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
     <!-- ── Create / Edit User Modal ─────────────────────────────────────────── -->
     <CModal :visible="showForm" @close="showForm=false" size="xl" backdrop="static" scrollable>
       <CModalHeader>
-        <CModalTitle>{{ editTarget ? `Edit: ${editTarget.name}` : 'Add New User' }}</CModalTitle>
+        <CModalTitle>{{ editTarget ? t('superadminUsers.editTitle', { name: editTarget.name }) : t('superadminUsers.addTitle') }}</CModalTitle>
       </CModalHeader>
       <CModalBody>
         <CAlert v-if="formError" color="danger" class="small py-2">{{ formError }}</CAlert>
 
         <CRow class="g-3 mb-3">
           <CCol md="6">
-            <CFormLabel class="fw-semibold">Full Name <span class="text-danger">*</span></CFormLabel>
-            <CFormInput v-model="form.name" placeholder="Full name" />
+            <CFormLabel class="fw-semibold">{{ t('common.fullName') }} <span class="text-danger">*</span></CFormLabel>
+            <CFormInput v-model="form.name" :placeholder="t('superadminUsers.fullNamePlaceholder')" />
           </CCol>
           <CCol md="6">
-            <CFormLabel class="fw-semibold">Phone</CFormLabel>
+            <CFormLabel class="fw-semibold">{{ t('common.phone') }}</CFormLabel>
             <CFormInput v-model="form.phone" placeholder="+255 7xx xxx xxx" />
           </CCol>
           <CCol md="6">
-            <CFormLabel class="fw-semibold">Email <span class="text-danger">*</span></CFormLabel>
+            <CFormLabel class="fw-semibold">{{ t('common.email') }} <span class="text-danger">*</span></CFormLabel>
             <CFormInput v-model="form.email" type="email" />
           </CCol>
           <CCol v-if="!editTarget" md="6">
-            <CFormLabel class="fw-semibold">Password</CFormLabel>
+            <CFormLabel class="fw-semibold">{{ t('common.password') }}</CFormLabel>
             <CFormInput value="SCHOOL" type="text" readonly class="bg-light text-muted fw-bold" />
-            <div class="text-muted small mt-1">User will be prompted to change this on first login</div>
+            <div class="text-muted small mt-1">{{ t('superadminUsers.passwordHint') }}</div>
           </CCol>
           <CCol md="6">
-            <CFormLabel class="fw-semibold">School</CFormLabel>
+            <CFormLabel class="fw-semibold">{{ t('common.school') }}</CFormLabel>
             <CFormSelect v-model="form.school_id">
-              <option value="">— No school —</option>
+              <option value="">{{ t('superadminUsers.noSchool') }}</option>
               <option v-for="s in schools" :key="s.id" :value="s.id">{{ s.name }}</option>
             </CFormSelect>
           </CCol>
           <CCol md="6">
-            <CFormLabel class="fw-semibold">Role <span class="text-danger">*</span></CFormLabel>
+            <CFormLabel class="fw-semibold">{{ t('staff.role') }} <span class="text-danger">*</span></CFormLabel>
             <CFormSelect v-model="form.role">
-              <option value="">— Select role —</option>
+              <option value="">{{ t('superadminUsers.selectRole') }}</option>
               <option v-for="r in allRoles" :key="r.id" :value="r.name">{{ r.name }}</option>
             </CFormSelect>
           </CCol>
         </CRow>
 
         <!-- Direct permissions (optional overrides) -->
-        <div class="fw-semibold mb-2">Direct Permissions
-          <span class="text-muted fw-normal small ms-1">(optional — overrides role defaults)</span>
+        <div class="fw-semibold mb-2">{{ t('superadminUsers.directPermissions') }}
+          <span class="text-muted fw-normal small ms-1">{{ t('superadminUsers.directPermissionsHint') }}</span>
         </div>
         <CRow class="g-2">
           <CCol v-for="(perms, module) in allPermGrps" :key="module" xs="12" sm="6" lg="4">
@@ -527,10 +531,10 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
         </CRow>
       </CModalBody>
       <CModalFooter>
-        <CButton color="secondary" variant="ghost" @click="showForm=false">Cancel</CButton>
+        <CButton color="secondary" variant="ghost" @click="showForm=false">{{ t('common.cancel') }}</CButton>
         <CButton color="success" :disabled="saving || !form.name || !form.email || !form.role" @click="saveUser">
           <CSpinner v-if="saving" size="sm" class="me-1" />
-          {{ editTarget ? 'Save Changes' : 'Create User' }}
+          {{ editTarget ? t('common.saveChanges') : t('superadminUsers.createUser') }}
         </CButton>
       </CModalFooter>
     </CModal>
@@ -538,21 +542,23 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
     <!-- ── Freeze / Deactivate Modal ─────────────────────────────────────────── -->
     <CModal :visible="showDeactivate" @close="showDeactivate=false" size="sm" backdrop="static">
       <CModalHeader style="border-bottom:2px solid #dc3545;">
-        <CModalTitle class="text-danger">🔒 Freeze Account</CModalTitle>
+        <CModalTitle class="text-danger">{{ t('superadminUsers.freezeTitle') }}</CModalTitle>
       </CModalHeader>
       <CModalBody>
-        <p>You are about to <strong>freeze</strong> the account of <strong>{{ deactivateTarget?.name }}</strong>.</p>
+        <i18n-t keypath="superadminUsers.freezeIntro" tag="p">
+          <template #name><strong>{{ deactivateTarget?.name }}</strong></template>
+        </i18n-t>
         <p class="text-danger small mb-3">
-          ⚠ All active sessions and tokens will be revoked immediately. The user will not be able to log in until reactivated.
+          {{ t('superadminUsers.freezeWarning') }}
         </p>
-        <CFormLabel class="fw-semibold">Reason <span class="text-muted fw-normal">(optional)</span></CFormLabel>
-        <CFormTextarea v-model="deactivateReason" rows="3" placeholder="e.g. Suspended pending investigation" />
+        <CFormLabel class="fw-semibold">{{ t('common.reason') }} <span class="text-muted fw-normal">({{ t('common.optional').toLowerCase() }})</span></CFormLabel>
+        <CFormTextarea v-model="deactivateReason" rows="3" :placeholder="t('superadminUsers.reasonPlaceholder')" />
       </CModalBody>
       <CModalFooter>
-        <CButton color="secondary" variant="ghost" @click="showDeactivate=false">Cancel</CButton>
+        <CButton color="secondary" variant="ghost" @click="showDeactivate=false">{{ t('common.cancel') }}</CButton>
         <CButton color="danger" :disabled="deactivating" @click="doDeactivate">
           <CSpinner v-if="deactivating" size="sm" class="me-1" />
-          Freeze Account
+          {{ t('superadminUsers.freezeAccount') }}
         </CButton>
       </CModalFooter>
     </CModal>
@@ -560,13 +566,12 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
     <!-- ── Permissions Editor Modal ───────────────────────────────────────────── -->
     <CModal :visible="showPerms" @close="showPerms=false" size="xl" scrollable>
       <CModalHeader>
-        <CModalTitle>🔑 Permissions — {{ permsTarget?.name }}</CModalTitle>
+        <CModalTitle>{{ t('superadminUsers.permissionsTitle') }} {{ permsTarget?.name }}</CModalTitle>
       </CModalHeader>
       <CModalBody>
-        <p class="text-muted small mb-3">
-          Direct permissions are <em>added on top of</em> the user's role permissions.
-          Currently <strong>{{ editorPerms.size }}</strong> direct permission(s) assigned.
-        </p>
+        <i18n-t keypath="superadminUsers.directPermsInfo" tag="p" class="text-muted small mb-3">
+          <template #count><strong>{{ editorPerms.size }}</strong></template>
+        </i18n-t>
         <CRow class="g-2">
           <CCol v-for="(perms, module) in allPermGrps" :key="module" xs="12" sm="6" lg="4">
             <div class="border rounded-3 overflow-hidden">
@@ -605,10 +610,10 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
         </CRow>
       </CModalBody>
       <CModalFooter>
-        <CButton color="secondary" variant="ghost" @click="showPerms=false">Cancel</CButton>
+        <CButton color="secondary" variant="ghost" @click="showPerms=false">{{ t('common.cancel') }}</CButton>
         <CButton color="success" :disabled="savingPerms" @click="saveEditorPerms">
           <CSpinner v-if="savingPerms" size="sm" class="me-1" />
-          Save Permissions
+          {{ t('superadminUsers.savePermissions') }}
         </CButton>
       </CModalFooter>
     </CModal>
@@ -616,13 +621,14 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
     <!-- ── Restrict Permissions Modal ──────────────────────────────────────────── -->
     <CModal :visible="showRestrict" @close="showRestrict=false" size="xl" scrollable backdrop="static">
       <CModalHeader style="border-bottom:2px solid #dc3545;">
-        <CModalTitle>🚫 Restrict Permissions — {{ restrictTarget?.name }}</CModalTitle>
+        <CModalTitle>{{ t('superadminUsers.restrictTitle') }} {{ restrictTarget?.name }}</CModalTitle>
       </CModalHeader>
       <CModalBody>
         <CAlert color="warning" class="small py-2 mb-3">
-          <strong>Warning:</strong> Toggling a permission here <em>blocks</em> the user from using it,
-          even if their role normally grants it. Superadmin accounts cannot be restricted.
-          Currently <strong>{{ restrictedPerms.size }}</strong> permission(s) blocked.
+          <strong>{{ t('common.warning') }}:</strong>
+          <i18n-t keypath="superadminUsers.restrictInfo" tag="span">
+            <template #count><strong>{{ restrictedPerms.size }}</strong></template>
+          </i18n-t>
         </CAlert>
         <CRow class="g-2">
           <CCol v-for="(perms, module) in allPermGrps" :key="module" xs="12" sm="6" lg="4">
@@ -639,7 +645,7 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
               >
                 {{ module }}
                 <span style="font-size:.72rem;">
-                  {{ perms.filter(p => restrictedPerms.has(p)).length }}/{{ perms.length }} blocked
+                  {{ perms.filter(p => restrictedPerms.has(p)).length }}/{{ perms.length }} {{ t('superadminUsers.blocked') }}
                 </span>
               </div>
               <div class="p-2">
@@ -657,7 +663,7 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
                   <span :class="restrictedPerms.has(perm) ? 'fw-semibold text-danger' : 'text-muted'">
                     {{ perm.split('.')[1]?.replace(/_/g,' ') ?? perm }}
                   </span>
-                  <CBadge v-if="restrictedPerms.has(perm)" color="danger" class="ms-auto" style="font-size:.65rem;">blocked</CBadge>
+                  <CBadge v-if="restrictedPerms.has(perm)" color="danger" class="ms-auto" style="font-size:.65rem;">{{ t('superadminUsers.blockedOne') }}</CBadge>
                 </div>
               </div>
             </div>
@@ -665,24 +671,25 @@ function moduleActive(perms, set) { return perms.filter(p => set.has(p)).length 
         </CRow>
       </CModalBody>
       <CModalFooter>
-        <CButton color="secondary" variant="ghost" @click="showRestrict=false">Cancel</CButton>
+        <CButton color="secondary" variant="ghost" @click="showRestrict=false">{{ t('common.cancel') }}</CButton>
         <CButton color="danger" :disabled="savingRestrict" @click="saveRestrict">
           <CSpinner v-if="savingRestrict" size="sm" class="me-1" />
-          Apply Restrictions
+          {{ t('superadminUsers.applyRestrictions') }}
         </CButton>
       </CModalFooter>
     </CModal>
 
     <!-- ── Delete Confirm Modal ───────────────────────────────────────────────── -->
     <CModal :visible="!!confirmDelete" @close="confirmDelete=null" size="sm">
-      <CModalHeader><CModalTitle>Delete User</CModalTitle></CModalHeader>
+      <CModalHeader><CModalTitle>{{ t('superadminUsers.deleteTitle') }}</CModalTitle></CModalHeader>
       <CModalBody>
-        Permanently delete <strong>{{ confirmDelete?.name }}</strong>?
-        All their tokens and data associations will be removed. This cannot be undone.
+        <i18n-t keypath="superadminUsers.deleteConfirm" tag="span">
+          <template #name><strong>{{ confirmDelete?.name }}</strong></template>
+        </i18n-t>
       </CModalBody>
       <CModalFooter>
-        <CButton color="secondary" variant="ghost" @click="confirmDelete=null">Cancel</CButton>
-        <CButton color="danger" @click="doDelete">Delete Permanently</CButton>
+        <CButton color="secondary" variant="ghost" @click="confirmDelete=null">{{ t('common.cancel') }}</CButton>
+        <CButton color="danger" @click="doDelete">{{ t('superadminUsers.deletePermanently') }}</CButton>
       </CModalFooter>
     </CModal>
 

@@ -114,7 +114,7 @@ async function doDelete() {
 }
 
 function termNumberLabel(n) {
-  return ['', 'Kwanza', 'Pili', 'Tatu', 'Nne'][n] ?? n
+  return n >= 1 && n <= 4 ? t(`terms.ordinal${n}`) : n
 }
 </script>
 

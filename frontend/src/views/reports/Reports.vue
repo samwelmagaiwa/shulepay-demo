@@ -172,7 +172,7 @@
             </div>
             <div class="d-flex gap-1">
               <CButton size="sm" color="secondary" variant="outline" :disabled="colPage === 1" @click="colPage--">
-                {{ t('common.previous', 'Previous') }}
+                {{ t('common.prev') }}
               </CButton>
               <CButton size="sm" color="secondary" variant="outline" :disabled="colPage === colTotalPages" @click="colPage++">
                 {{ t('common.next', 'Next') }}
@@ -248,7 +248,7 @@
               <div class="d-flex gap-1">
                 <CButton size="sm" color="secondary" variant="outline"
                          :disabled="debtorPage === 1" @click="debtorPage--">
-                  {{ t('common.previous', 'Previous') }}
+                  {{ t('common.prev') }}
                 </CButton>
                 <CButton size="sm" color="secondary" variant="outline"
                          :disabled="debtorPage === debtorTotalPages" @click="debtorPage++">

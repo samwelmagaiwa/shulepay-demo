@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { intlLocale } from '@/i18n'
 import { useDashboardStore } from '@/stores/dashboard'
 import { CChart } from '@coreui/vue-chartjs'
 import * as XLSX from 'xlsx'
@@ -685,7 +686,7 @@ const formatSimpleDate = (dateStr) => {
   if (!dateStr) return '—'
   try {
     const d = new Date(dateStr)
-    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    return d.toLocaleDateString(intlLocale(), { day: '2-digit', month: 'short', year: 'numeric' })
   } catch { return dateStr }
 }
 
@@ -1092,9 +1093,9 @@ const exportPendingToExcel = async () => {
           </div>
           <div class="d-flex align-items-center gap-2 ps-2 border-start border-slate-200">
              <span class="fw-black" style="color: #16a34a; font-size: 16px">↑</span>
-             <small class="fw-bold" style="color: #16a34a; font-size: 10px; letter-spacing: 0.5px">YALIYOLIPWA</small>
+             <small class="fw-bold" style="color: #16a34a; font-size: 10px; letter-spacing: 0.5px">{{ t('dashboard.legendPaidUp') }}</small>
              <span class="fw-black ms-1" style="color: #ec4899; font-size: 16px">↓</span>
-             <small class="fw-bold" style="color: #ec4899; font-size: 10px; letter-spacing: 0.5px">BADO</small>
+             <small class="fw-bold" style="color: #ec4899; font-size: 10px; letter-spacing: 0.5px">{{ t('dashboard.legendPending') }}</small>
           </div>
         </div>
         <div class="legend-divider"></div>
@@ -1117,9 +1118,9 @@ const exportPendingToExcel = async () => {
           </div>
           <div class="d-flex align-items-center gap-2 ps-2 border-start border-slate-200">
              <span class="fw-black" style="color: #16a34a; font-size: 16px">↑</span>
-             <small class="fw-bold" style="color: #16a34a; font-size: 10px; letter-spacing: 0.5px">YALIYOLIPWA</small>
+             <small class="fw-bold" style="color: #16a34a; font-size: 10px; letter-spacing: 0.5px">{{ t('dashboard.legendPaidUp') }}</small>
              <span class="fw-black ms-1" style="color: #dc2626; font-size: 16px">↓</span>
-             <small class="fw-bold" style="color: #dc2626; font-size: 10px; letter-spacing: 0.5px">HAWAJAL.</small>
+             <small class="fw-bold" style="color: #dc2626; font-size: 10px; letter-spacing: 0.5px">{{ t('dashboard.legendUnpaidShort') }}</small>
           </div>
         </div>
 
@@ -1132,7 +1133,7 @@ const exportPendingToExcel = async () => {
           @click="showAll = !showAll"
           :class="showAll ? 'btn-outline-primary' : 'btn-primary'"
         >
-          <span class="btn-text fw-bold">{{ showAll ? 'Top 10' : 'Full' }}</span>
+          <span class="btn-text fw-bold">{{ showAll ? t('dashboard.top10') : t('dashboard.fullView') }}</span>
         </button>
 
         <!-- ── Export Button ── -->
@@ -1143,7 +1144,7 @@ const exportPendingToExcel = async () => {
           :class="{ 'export-pending-btn--loading': exportState.loading }"
           @click="exportPendingToExcel"
           :disabled="exportState.loading || !sortedClinics.length"
-          :title="`Export ${pendingLabel} data to Excel`"
+          :title="t('dashboard.exportTitle', { label: pendingLabel })"
         >
           <span v-if="exportState.loading" class="export-spinner"></span>
           <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1151,8 +1152,8 @@ const exportPendingToExcel = async () => {
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          <span class="export-btn-label">{{ exportState.loading ? 'Exporting…' : 'Export' }}</span>
-          <span class="export-btn-sub" :class="isToday ? 'sub--yellow' : 'sub--red'">{{ isToday ? 'BADO' : 'HAWAJAL.' }}</span>
+          <span class="export-btn-label">{{ exportState.loading ? t('dashboard.exporting') : t('common.export') }}</span>
+          <span class="export-btn-sub" :class="isToday ? 'sub--yellow' : 'sub--red'">{{ isToday ? t('dashboard.legendPending') : t('dashboard.legendUnpaidShort') }}</span>
         </button>
       </div>
 

@@ -5,7 +5,7 @@
     <div class="wl-topbar">
       <div class="wl-topbar-left">
         <span class="wl-showing">
-          Showing {{ showingFrom }}–{{ showingTo }} of {{ meta.total }}
+          {{ t('common.showing', { from: showingFrom, to: showingTo, total: meta.total }) }}
         </span>
         <select v-model="perPage" class="wl-select wl-select--sm" @change="onPerPageChange">
           <option value="10">10</option>
@@ -13,21 +13,21 @@
           <option value="50">50</option>
           <option value="100">100</option>
         </select>
-        <span class="wl-perpage-label">per page</span>
-        <button class="wl-btn-filter" :class="{ 'wl-btn-filter--active': filtersVisible }" @click.stop="filtersVisible = !filtersVisible" title="Filters">
-          &#9776; Filter
+        <span class="wl-perpage-label">{{ t('common.perPage') }}</span>
+        <button class="wl-btn-filter" :class="{ 'wl-btn-filter--active': filtersVisible }" @click.stop="filtersVisible = !filtersVisible" :title="t('common.filter')">
+          &#9776; {{ t('common.filter') }}
         </button>
       </div>
       <div class="wl-topbar-right">
         <button class="wl-btn-add" @click="showAddModal = true">+ {{ t('students.add') }}</button>
         <div class="wl-pagination-top">
-          <button :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; fetchData()">Previous</button>
+          <button :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; fetchData()">{{ t('common.prev') }}</button>
           <button
             v-for="p in visiblePages" :key="p"
             :class="{ 'wl-page--active': p === meta.current_page }"
             @click="page = p; fetchData()"
           >{{ p }}</button>
-          <button :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; fetchData()">Next</button>
+          <button :disabled="meta.current_page >= meta.last_page" @click="page = meta.current_page + 1; fetchData()">{{ t('common.next') }}</button>
         </div>
       </div>
     </div>
@@ -72,7 +72,7 @@
       <button class="wl-act wl-act--danger" :disabled="!selectedStudent" @click="selectedStudent && confirmDelete(selectedStudent)">
         <span class="wl-act-icon">&#9635;</span> {{ t('common.delete') }}
       </button>
-      <span class="wl-hint">{{ t('students.dblClickHint', 'Double-click a row to open · right-click for actions') }}</span>
+      <span class="wl-hint">{{ t('students.dblClickHint') }}</span>
     </div>
 
     <!-- ── Grid table ── -->
@@ -115,13 +115,13 @@
               {{ t('students.gender') }}<span class="wl-sort">{{ sortIcon('gender') }}</span>
             </th>
             <th @click="toggleSort('sponsorship_type')">
-              {{ t('students.sponsorship', 'Sponsorship') }}<span class="wl-sort">{{ sortIcon('sponsorship_type') }}</span>
+              {{ t('students.sponsorship') }}<span class="wl-sort">{{ sortIcon('sponsorship_type') }}</span>
             </th>
             <th @click="toggleSort('admitted_at')">
-              {{ t('students.admitted', 'Admitted') }}<span class="wl-sort">{{ sortIcon('admitted_at') }}</span>
+              {{ t('students.admitted') }}<span class="wl-sort">{{ sortIcon('admitted_at') }}</span>
             </th>
             <th @click="toggleSort('outstanding_balance_cents')">
-              {{ t('students.outstanding', 'Outstanding') }}<span class="wl-sort">{{ sortIcon('outstanding_balance_cents') }}</span>
+              {{ t('students.outstanding') }}<span class="wl-sort">{{ sortIcon('outstanding_balance_cents') }}</span>
             </th>
             <th>{{ t('common.status') }}</th>
           </tr>
@@ -144,7 +144,7 @@
             <td>{{ sponsorshipLabel(s.sponsorship_type) }}</td>
             <td>{{ formatDateShort(s.admitted_at) }}</td>
             <td>
-              <span v-if="!s.outstanding_balance_cents || s.outstanding_balance_cents <= 0" class="wl-paid">Paid up</span>
+              <span v-if="!s.outstanding_balance_cents || s.outstanding_balance_cents <= 0" class="wl-paid">{{ t('students.paidUp') }}</span>
               <span v-else class="wl-debt">{{ formatMoney(s.outstanding_balance_cents) }}</span>
             </td>
             <td><span :class="['wl-badge', 'wl-badge--' + (s.status || 'active')]">{{ statusLabel(s.status) }}</span></td>
@@ -346,7 +346,7 @@ watch(() => schoolStore.activeSchoolId, (id) => {
   fetchData()
 })
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const MONTH_KEYS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
 
 function formatMoney(cents) {
   return 'TZS ' + Number(cents / 100).toLocaleString('en', { minimumFractionDigits: 0 })
@@ -357,7 +357,8 @@ function formatDateLong(d) {
   const parts = d.split('-')
   if (parts.length !== 3) return d
   const day = parseInt(parts[2], 10)
-  const mon = MONTHS[parseInt(parts[1], 10) - 1] || parts[1]
+  const monKey = MONTH_KEYS[parseInt(parts[1], 10) - 1]
+  const mon = monKey ? t(`common.months.${monKey}`) : parts[1]
   const yr  = parts[0]
   return `${day}-${mon}-${yr}`
 }
@@ -369,24 +370,21 @@ function formatDateShort(d) {
 function genderLabel(g) {
   if (!g) return '—'
   const v = g.toLowerCase()
-  if (v === 'male' || v === 'me') return 'Male'
-  if (v === 'female' || v === 'ke') return 'Female'
+  if (v === 'male' || v === 'me') return t('students.male')
+  if (v === 'female' || v === 'ke') return t('students.female')
   return g
 }
 
 function sponsorshipLabel(s) {
-  if (!s || s === 'none') return 'Not Sponsored'
-  const map = { full: 'Sponsored (Free)', half: 'Half Sponsored', full_paid: 'Sponsored (Paid)' }
-  return map[s] || s
+  if (!s || s === 'none') return t('students.notSponsored')
+  const map = { full: 'students.sponsoredFree', half: 'students.halfSponsored', full_paid: 'students.sponsoredPaid' }
+  return map[s] ? t(map[s]) : s
 }
 
 function statusLabel(s) {
-  if (!s) return 'Active'
-  const map = {
-    active: 'Active', sponsored: 'Sponsored', half_sponsored: 'Half Sponsored',
-    orphaned: 'Orphaned', transferred: 'Transferred', graduated: 'Graduated', dropped: 'Dropped',
-  }
-  return map[s] || s
+  if (!s) return t('statusBadge.active')
+  const known = ['active', 'sponsored', 'half_sponsored', 'orphaned', 'transferred', 'graduated', 'dropped']
+  return known.includes(s) ? t(`statusBadge.${s}`) : s
 }
 
 async function fetchData() {
@@ -476,7 +474,7 @@ async function doDelete() {
     fetchData()
     if (hadInvoices) showOrphanModal.value = true
   } catch (e) {
-    alert(e?.response?.data?.message || 'Imeshindwa kufuta.')
+    alert(e?.response?.data?.message || t('assets.errors.deleteFailed'))
   } finally {
     deleting.value = false
   }

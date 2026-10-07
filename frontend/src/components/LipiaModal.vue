@@ -144,7 +144,7 @@
             <label class="form-label fw-semibold">{{ t('payments.reference') }} <span class="text-danger">*</span></label>
             <CFormInput
               v-model="form.reference_number"
-              :placeholder="form.method === 'mpesa' ? 'e.g. QHX123456' : 'e.g. BENKI-0001234'"
+              :placeholder="form.method === 'mpesa' ? t('payments.refExampleMpesa') : t('payments.refExampleBank')"
               @input="updatePreview"
             />
           </div>

@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 /**
  * Receipt printing / downloading.
@@ -172,7 +173,9 @@ export async function downloadReceipt(receiptId, receiptNumber = null) {
 
   const a = document.createElement('a')
   a.href = url
-  a.download = `Risiti-${receiptNumber || receiptId}.pdf`
+  // Same prefix the server puts in Content-Disposition (lang/*/pdf.php), so the
+  // saved name follows the UI language rather than always being Swahili.
+  a.download = `${i18n.global.t('receiptPreview.filePrefix')}-${receiptNumber || receiptId}.pdf`
   document.body.appendChild(a)
   a.click()
   a.remove()

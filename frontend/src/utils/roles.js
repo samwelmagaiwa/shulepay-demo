@@ -1,3 +1,5 @@
+import { currentLocale } from '@/i18n'
+
 /**
  * Central role registry — single source of truth for all role metadata.
  * Import getRoleLabel / getRoleIcon / ROLES anywhere that needs role display.
@@ -24,8 +26,11 @@ export function getRole(value) {
   return _byValue[value] ?? { value, label: value, swahili: value, icon: '👤', levels: [] }
 }
 
+// Follows the UI language: callers re-run on render, and currentLocale() reads a reactive ref,
+// so role names switch with the header language selector.
 export function getRoleLabel(value) {
-  return getRole(value).label
+  const r = getRole(value)
+  return currentLocale() === 'sw' ? r.swahili : r.label
 }
 
 export function getRoleSwahili(value) {

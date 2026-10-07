@@ -70,7 +70,7 @@
                   <CTableHeaderCell>{{ t('students.admissionNo') }}</CTableHeaderCell>
                   <CTableHeaderCell class="d-none d-md-table-cell">{{ t('students.gender') }}</CTableHeaderCell>
                   <CTableHeaderCell class="d-none d-md-table-cell">{{ t('common.class') }}</CTableHeaderCell>
-                  <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('students.guardian') }}</CTableHeaderCell>
+                  <CTableHeaderCell class="d-none d-lg-table-cell">{{ t('guardians.guardian') }}</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody>
@@ -191,7 +191,7 @@ async function previewImport() {
     previewData.value = data.data || data
     step.value = 1
   } catch (e) {
-    uploadError.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia faili'
+    uploadError.value = e?.response?.data?.message || t('errors.uploadFile')
   } finally {
     previewing.value = false
   }
@@ -209,7 +209,7 @@ async function executeImport() {
     importResult.value = data.data || data
     step.value = 2
   } catch (e) {
-    importError.value = e?.response?.data?.message || 'Hitilafu wakati wa kuingiza data'
+    importError.value = e?.response?.data?.message || t('errors.importData')
   } finally {
     importing.value = false
   }

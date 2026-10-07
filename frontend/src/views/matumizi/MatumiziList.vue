@@ -19,10 +19,10 @@
             </CFormSelect>
           </CCol>
           <CCol xs="6" sm="4" md="2">
-            <CFormInput v-model="filters.date_from" type="date" size="sm" @update:modelValue="page = 1; loadData()" placeholder="Tarehe ya kwanza" style="min-height:36px;" />
+            <CFormInput v-model="filters.date_from" type="date" size="sm" @update:modelValue="page = 1; loadData()" :placeholder="t('common.dateFrom')" style="min-height:36px;" />
           </CCol>
           <CCol xs="6" sm="4" md="2">
-            <CFormInput v-model="filters.date_to" type="date" size="sm" @update:modelValue="page = 1; loadData()" placeholder="Tarehe ya mwisho" style="min-height:36px;" />
+            <CFormInput v-model="filters.date_to" type="date" size="sm" @update:modelValue="page = 1; loadData()" :placeholder="t('common.dateTo')" style="min-height:36px;" />
           </CCol>
           <CCol xs="6" sm="4" md="1">
             <CButton size="sm" color="secondary" variant="outline" class="w-100" @click="resetFilters" style="min-height:36px;">{{ t('expenses.resetFilters') }}</CButton>
@@ -128,7 +128,7 @@
       <small class="text-medium-emphasis">
         {{ t('common.showing', { from: (meta.current_page - 1) * meta.per_page + 1, to: Math.min(meta.current_page * meta.per_page, meta.total), total: meta.total }) }}
       </small>
-      <CPagination aria-label="Page" size="sm">
+      <CPagination :aria-label="t('common.page')" size="sm">
         <CPaginationItem :disabled="meta.current_page <= 1" @click="page = meta.current_page - 1; loadData()">{{ t('common.first') }}</CPaginationItem>
         <CPaginationItem
           v-for="p in visiblePages"
@@ -383,9 +383,9 @@ function openEditModal(expense) {
 
 async function submitExpense() {
   addError.value = ''
-  if (!addForm.value.description.trim()) { addError.value = 'Weka maelezo'; return }
-  if (!addForm.value.amount || addForm.value.amount <= 0) { addError.value = 'Weka kiasi'; return }
-  if (!addForm.value.category_id) { addError.value = 'Chagua kategoria'; return }
+  if (!addForm.value.description.trim()) { addError.value = t('errors.enterDescription'); return }
+  if (!addForm.value.amount || addForm.value.amount <= 0) { addError.value = t('errors.enterAmount'); return }
+  if (!addForm.value.category_id) { addError.value = t('errors.selectCategory'); return }
   saving.value = true
   const payload = {
     description: addForm.value.description,
@@ -406,7 +406,7 @@ async function submitExpense() {
     // rather than a generic failure, since the user cannot tell why otherwise.
     addError.value = e?.response?.data?.message
       || Object.values(e?.response?.data?.errors || {})[0]?.[0]
-      || 'Hitilafu'
+      || t('common.error')
   } finally {
     saving.value = false
   }

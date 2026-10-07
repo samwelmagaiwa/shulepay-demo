@@ -219,7 +219,7 @@ function countByAction(action) {
 async function fetchPreview() {
   setupError.value = ''
   if (!setup.value.school_id || !setup.value.from_year_id || !setup.value.new_year_name.trim()) {
-    setupError.value = 'Jaza sehemu zote zinazohitajika'
+    setupError.value = t('errors.fillRequired')
     return
   }
   previewing.value = true
@@ -239,7 +239,7 @@ async function fetchPreview() {
     }))
     step.value = 1
   } catch (e) {
-    setupError.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia wanafunzi'
+    setupError.value = e?.response?.data?.message || t('errors.loadStudents')
   } finally {
     previewing.value = false
   }
@@ -261,7 +261,7 @@ async function executeRollover() {
     })
     executeResult.value = data
   } catch (e) {
-    executeError.value = e?.response?.data?.message || 'Hitilafu wakati wa kutekeleza rollover'
+    executeError.value = e?.response?.data?.message || t('errors.rollover')
   } finally {
     executing.value = false
   }

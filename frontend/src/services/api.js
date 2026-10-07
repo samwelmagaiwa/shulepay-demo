@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { currentLocale } from '@/i18n'
 
 const api = axios.create({
   baseURL: '/api',
@@ -18,6 +19,11 @@ const api = axios.create({
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('shulepay_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
+
+  // Tell the server which language the UI is in so everything it renders itself
+  // (receipt/statement/report PDFs, enum labels, validation text) follows the
+  // header language switch instead of staying in one fixed language.
+  config.headers['X-Locale'] = currentLocale()
 
   const schoolId = localStorage.getItem('active_school_id')
   if (schoolId && Number(schoolId) > 0) {

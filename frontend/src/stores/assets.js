@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { i18n } from '@/i18n'
 
 export const useAssetsStore = defineStore('assets', () => {
   const assets      = ref([])
@@ -22,7 +23,7 @@ export const useAssetsStore = defineStore('assets', () => {
       lastPage.value    = data.meta?.last_page ?? 1
       total.value       = data.meta?.total ?? (data.data?.length ?? 0)
     } catch (e) {
-      error.value = e?.response?.data?.message || 'Hitilafu wakati wa kupakia data'
+      error.value = e?.response?.data?.message || i18n.global.t('errors.loadData')
     } finally {
       loading.value = false
     }

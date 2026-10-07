@@ -471,7 +471,7 @@ const formatDate = (dateStr) => {
         :style="{ transform: `translateX(-${activeOutageSlide * 100}%)` }"
       >
         <div v-for="slide in outageSlides" :key="slide" class="outage-slide">
-          <img :src="slide" alt="Hospital view" class="outage-slide-image" />
+          <img :src="slide" :alt="t('dashboard.outageSlideAlt')" class="outage-slide-image" />
         </div>
       </div>
     </div>
@@ -560,7 +560,7 @@ const formatDate = (dateStr) => {
             <div class="col">
               <div class="p-3 border border-primary rounded h-100 d-flex flex-column align-items-center justify-content-between text-center bg-primary-subtle shadow-sm">
                 <span class="text-uppercase fw-bold text-dark mb-1" style="font-size: 0.85rem"
-                  >TOTAL</span
+                  >{{ t('common.total').toUpperCase() }}</span
                 >
                 <h3 class="mb-1 fw-extrabold text-primary fs-4">
                   {{ patientCategories.find((c) => c.title === 'Total')?.value || '0' }}
@@ -626,7 +626,7 @@ const formatDate = (dateStr) => {
                       : `${item.color}15`,
                   }"
                   @click="togglePieCategory(item.title)"
-                  :title="isCategoryHidden(item.title) ? 'Click to show' : 'Click to hide'"
+                  :title="isCategoryHidden(item.title) ? t('dashboard.clickToShow') : t('dashboard.clickToHide')"
                 >
                   {{ item.title }}
                 </span>

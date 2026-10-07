@@ -296,6 +296,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { intlLocale } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
 
@@ -315,7 +316,7 @@ const initials = computed(() => {
 })
 
 const todayDate = computed(() =>
-  new Date().toLocaleDateString('en-TZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  new Date().toLocaleDateString(intlLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 )
 
 // Totals come from the server, which computes them from the same invoices it
@@ -398,7 +399,9 @@ const attLoading = ref(false)
 const attMonth   = ref('')
 
 const currentMonth = new Date().toISOString().slice(0, 7)
-const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const weekdayLabels = computed(() =>
+  ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(k => t(`common.weekdaysShort.${k}`))
+)
 
 // day number -> record, so the calendar can colour cells without re-scanning.
 const recordsByDay = computed(() => {
