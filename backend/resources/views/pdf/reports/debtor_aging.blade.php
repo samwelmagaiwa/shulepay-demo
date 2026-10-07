@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="UTF-8">
 <style>
@@ -30,35 +30,29 @@
 
 <div class="header">
     <h1>{{ $school?->name ?? 'ShulePay' }}</h1>
-    <p>Debtor Aging Report &mdash; As of {{ $report['summary']['as_of'] }}</p>
-    <p>Generated: {{ now()->format('d M Y H:i') }}</p>
+    <p>{{ __('pdf.reports.debtor_aging.title') }} &mdash; {{ __('pdf.reports.debtor_aging.as_of', ['date' => $report['summary']['as_of']]) }}</p>
+    <p>{{ __('pdf.reports.generated') }}: {{ now()->locale(app()->getLocale())->translatedFormat('d M Y H:i') }}</p>
 </div>
 
 <div class="summary-grid">
     <div class="summary-box">
-        <div class="label">Total Debtors</div>
+        <div class="label">{{ __('pdf.reports.debtor_aging.total_debtors') }}</div>
         <div class="value">{{ number_format($report['summary']['total_debtors']) }}</div>
     </div>
     <div class="summary-box">
-        <div class="label">Total Outstanding</div>
+        <div class="label">{{ __('pdf.reports.debtor_aging.total_outstanding') }}</div>
         <div class="value">TZS {{ number_format($report['summary']['total_outstanding_cents'] / 100, 2) }}</div>
     </div>
 </div>
 
 @php
-$bucketLabels = [
-    'current'    => 'Current (Not Yet Due)',
-    'days_1_30'  => '1–30 Days Overdue',
-    'days_31_60' => '31–60 Days Overdue',
-    'days_61_90' => '61–90 Days Overdue',
-    'over_90'    => 'Over 90 Days Overdue',
-];
+$bucketLabels = __('pdf.reports.debtor_aging.buckets');
 @endphp
 
 @foreach($report['buckets'] as $key => $bucket)
     <div class="bucket-header {{ $key }}">
         {{ $bucketLabels[$key] ?? $key }}
-        &mdash; {{ $bucket['count'] }} students &mdash;
+        &mdash; {{ __('pdf.reports.debtor_aging.students_count', ['count' => $bucket['count']]) }} &mdash;
         TZS {{ number_format($bucket['amount_cents'] / 100, 2) }}
     </div>
 
@@ -66,11 +60,11 @@ $bucketLabels = [
     <table>
         <thead>
             <tr>
-                <th>Student Name</th>
-                <th>Admission No.</th>
-                <th>Class</th>
-                <th>Oldest Invoice Date</th>
-                <th>Outstanding (TZS)</th>
+                <th>{{ __('pdf.reports.debtor_aging.student_name') }}</th>
+                <th>{{ __('pdf.reports.debtor_aging.admission_no') }}</th>
+                <th>{{ __('pdf.reports.debtor_aging.class') }}</th>
+                <th>{{ __('pdf.reports.debtor_aging.oldest_invoice') }}</th>
+                <th>{{ __('pdf.reports.debtor_aging.outstanding_tzs') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -86,10 +80,10 @@ $bucketLabels = [
         </tbody>
     </table>
     @else
-    <p style="font-size:10px; color:#6b7280; padding: 4px 0 10px;">No students in this bucket.</p>
+    <p style="font-size:10px; color:#6b7280; padding: 4px 0 10px;">{{ __('pdf.reports.debtor_aging.empty_bucket') }}</p>
     @endif
 @endforeach
 
-<div class="footer">ShulePay &mdash; Fee Management System</div>
+<div class="footer">{{ __('pdf.reports.footer') }}</div>
 </body>
 </html>

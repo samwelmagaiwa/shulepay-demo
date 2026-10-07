@@ -616,22 +616,22 @@ class ReportController extends Controller
         return response()->json([
             'assets' => [
                 'cash_and_bank' => [
-                    'description' => 'Received fees (payments total)',
+                    'description' => __('pdf.reports.balance_sheet.desc_cash'),
                     'amount_cents' => (int) $cashAndBank,
                 ],
                 'receivables' => [
-                    'description' => 'Outstanding invoices',
+                    'description' => __('pdf.reports.balance_sheet.desc_receivables'),
                     'amount_cents' => (int) $receivables,
                 ],
                 'fixed_assets' => [
-                    'description' => 'Asset register book value',
+                    'description' => __('pdf.reports.balance_sheet.desc_fixed'),
                     'amount_cents' => (int) $fixedAssets,
                 ],
                 'total' => $totalAssets,
             ],
             'liabilities' => [
                 'payables' => [
-                    'description' => 'Supplier balances owed',
+                    'description' => __('pdf.reports.balance_sheet.desc_payables'),
                     'amount_cents' => $payables,
                 ],
                 'total' => $totalLiab,

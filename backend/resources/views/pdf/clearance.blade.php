@@ -1,8 +1,20 @@
+{{--
+  Printed bilingually by design (English + Swahili). The language chosen in the
+  UI leads — $p() — and the other follows — $s(). See lang/*/pdf.php 'clearance'.
+--}}
+@php
+    $alt = app()->getLocale() === 'sw' ? 'en' : 'sw';
+    $p = fn ($key, $rep = []) => __('pdf.clearance.'.$key, $rep);
+    $s = fn ($key, $rep = []) => __('pdf.clearance.'.$key, $rep, $alt);
+    $fmtDate = fn ($d, $f) => $d->copy()->locale(app()->getLocale())->translatedFormat($f);
+    $schoolName = $school?->name ?? $p('this_school');
+    $gender = strtolower((string) $student->gender);
+@endphp
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
-    <title>Clearance Certificate</title>
+    <title>{{ $p('title') }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -222,7 +234,7 @@
                     </td>
                     {{-- School details centre --}}
                     <td style="border:none; vertical-align:middle; text-align:center; padding:0;">
-                        <div class="school-name">{{ $school?->name ?? 'School Name' }}</div>
+                        <div class="school-name">{{ $school?->name ?? $p('school_fallback') }}</div>
                         @php
                             $tagline = $school?->settings['branding']['app_tagline'] ?? null;
                         @endphp
@@ -243,34 +255,31 @@
                             @if($school?->website) &bull; {{ $school->website }}@endif
                         </div>
                         @if($school?->registration_number)
-                            <div style="font-size:7.5pt; color:#888; margin-top:2px;">Reg. No: {{ $school->registration_number }}</div>
+                            <div style="font-size:7.5pt; color:#888; margin-top:2px;">{{ $p('reg_no') }}: {{ $school->registration_number }}</div>
                         @endif
                         @if($school?->established_year)
-                            <div style="font-size:7.5pt; color:#888;">Est. {{ $school->established_year }}</div>
+                            <div style="font-size:7.5pt; color:#888;">{{ $p('est') }} {{ $school->established_year }}</div>
                         @endif
                     </td>
                     {{-- Mirror logo space for balance --}}
                     <td style="width:22mm; border:none;"></td>
                 </tr>
             </table>
-            <div class="doc-title">Clearance Certificate</div>
-            <div class="doc-subtitle">Cheti cha Usafi wa Madeni &mdash; Fee Clearance</div>
+            <div class="doc-title">{{ $p('title') }}</div>
+            <div class="doc-subtitle">{{ $s('title') }} &mdash; {{ $p('subtitle') }}</div>
         </div>
 
         {{-- Ref --}}
         <div class="ref-line">
-            Ref: CLR-{{ $student->id }}-{{ $academicYear->id }}-{{ $issuedAt->format('Ymd') }}
-            &nbsp;&bull;&nbsp; Date: {{ $issuedAt->format('d F Y') }}
+            {{ $p('ref') }}: CLR-{{ $student->id }}-{{ $academicYear->id }}-{{ $issuedAt->format('Ymd') }}
+            &nbsp;&bull;&nbsp; {{ $p('date') }}: {{ $fmtDate($issuedAt, 'd F Y') }}
         </div>
 
         {{-- Intro --}}
         <div class="intro">
-            This is to certify that the student whose particulars appear below has <strong>settled all school fees
-            in full</strong> for the academic year indicated, and carries no outstanding financial obligation on
-            the records of <strong>{{ $school?->name ?? 'this school' }}</strong>.
+            {!! $p('intro', ['school' => e($schoolName)]) !!}
             <br>
-            <em>Hii ni kuthibitisha kwamba mwanafunzi aliyetajwa hapa chini amefanya malipo yote ya shule kwa
-            mwaka wa masomo ulioonyeshwa na hana deni lolote katika vitabu vya mahesabu ya shule.</em>
+            <em>{!! $s('intro', ['school' => e($schoolName)]) !!}</em>
         </div>
 
         {{-- Student details: passport photo + table --}}
@@ -278,34 +287,34 @@
             <tr>
                 <td class="photo-cell">
                     <div class="photo-box">
-                        Passport<br>Photo
+                        {{ $p('photo') }}
                     </div>
                 </td>
                 <td class="details-cell">
                     <table class="details-table">
                         <tr>
-                            <td class="lbl">Full Name / Jina Kamili</td>
+                            <td class="lbl">{{ $p('full_name') }} / {{ $s('full_name') }}</td>
                             <td>{{ $student->fullName() }}</td>
                         </tr>
                         <tr>
-                            <td class="lbl">Admission No. / Nambari ya Usajili</td>
-                            <td>{{ $enrollment?->admission_number ?? '&mdash;' }}</td>
+                            <td class="lbl">{{ $p('admission_no') }} / {{ $s('admission_no') }}</td>
+                            <td>{{ $enrollment?->admission_number ?? '—' }}</td>
                         </tr>
                         <tr>
-                            <td class="lbl">Class / Darasa</td>
-                            <td>{{ $enrollment?->schoolClass?->name ?? '&mdash;' }}</td>
+                            <td class="lbl">{{ $p('class') }} / {{ $s('class') }}</td>
+                            <td>{{ $enrollment?->schoolClass?->name ?? '—' }}</td>
                         </tr>
                         <tr>
-                            <td class="lbl">Academic Year / Mwaka wa Masomo</td>
+                            <td class="lbl">{{ $p('academic_year') }} / {{ $s('academic_year') }}</td>
                             <td>{{ $academicYear->name ?? $academicYear->year ?? $academicYear->id }}</td>
                         </tr>
                         <tr>
-                            <td class="lbl">Gender / Jinsia</td>
-                            <td>{{ ucfirst($student->gender ?? '&mdash;') }}</td>
+                            <td class="lbl">{{ $p('gender') }} / {{ $s('gender') }}</td>
+                            <td>{{ in_array($gender, ['male', 'female'], true) ? $p('gender_values.'.$gender) : ($student->gender ?: '—') }}</td>
                         </tr>
                         <tr>
-                            <td class="lbl">Date of Birth / Tarehe ya Kuzaliwa</td>
-                            <td>{{ $student->date_of_birth?->format('d/m/Y') ?? '&mdash;' }}</td>
+                            <td class="lbl">{{ $p('date_of_birth') }} / {{ $s('date_of_birth') }}</td>
+                            <td>{{ $student->date_of_birth?->format('d/m/Y') ?? '—' }}</td>
                         </tr>
                     </table>
                 </td>
@@ -316,15 +325,12 @@
 
         {{-- Footer note (italic) --}}
         <div class="footer-note">
-            <em>This certificate is issued solely for the purpose of confirming fee clearance. It does not
-            constitute proof of academic completion, good conduct, or any other matter. It is valid only when
-            bearing the official school stamp and an authorised signature.</em>
+            <em>{{ $p('note') }}</em>
             <br>
-            <em>Cheti hiki kimetolewa kwa madhumuni ya kuthibitisha usafi wa madeni ya shule peke yake. Halali tu
-            ikiwa ina muhuri rasmi wa shule na saini ya mwenye mamlaka.</em>
+            <em>{{ $s('note') }}</em>
             <br><br>
-            <em>Issued by / Imetolewa na: <strong style="font-style:normal;">{{ $issuedBy?->name ?? 'System' }}</strong>
-            &nbsp;&bull;&nbsp; {{ $issuedAt->format('d F Y, H:i') }}</em>
+            <em>{{ $p('issued_by') }} / {{ $s('issued_by') }}: <strong style="font-style:normal;">{{ $issuedBy?->name ?? $p('system') }}</strong>
+            &nbsp;&bull;&nbsp; {{ $fmtDate($issuedAt, 'd F Y, H:i') }}</em>
         </div>
 
         {{-- Signatures --}}
@@ -332,17 +338,17 @@
             <tr>
                 <td style="width:38%;">
                     <div class="sig-block">
-                        <div class="sig-label">Accountant / Mhasibu</div>
-                        <div class="sig-sub">Signature &amp; Date: _______________</div>
+                        <div class="sig-label">{{ $p('accountant') }} / {{ $s('accountant') }}</div>
+                        <div class="sig-sub">{{ $p('signature_date') }}: _______________</div>
                     </div>
                 </td>
                 <td style="width:24%; text-align:center; vertical-align:bottom; padding-bottom:4px;">
-                    <div class="stamp-box">Official<br>Stamp</div>
+                    <div class="stamp-box">{{ $p('stamp') }}</div>
                 </td>
                 <td style="width:38%; text-align:right;">
                     <div class="sig-block">
-                        <div class="sig-label">Principal / Mkuu wa Shule</div>
-                        <div class="sig-sub">Signature &amp; Date: _______________</div>
+                        <div class="sig-label">{{ $p('principal') }} / {{ $s('principal') }}</div>
+                        <div class="sig-sub">{{ $p('signature_date') }}: _______________</div>
                     </div>
                 </td>
             </tr>
@@ -350,8 +356,7 @@
 
         {{-- Watermark --}}
         <div class="watermark">
-            Generated digitally by ShulePay &bull; {{ $issuedAt->format('Y') }} &bull;
-            This document is system-verified and does not require a handwritten copy number.
+            {{ $p('watermark', ['year' => $issuedAt->format('Y')]) }}
         </div>
 
     </div>

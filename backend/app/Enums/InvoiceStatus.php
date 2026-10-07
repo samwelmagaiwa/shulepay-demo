@@ -10,11 +10,8 @@ enum InvoiceStatus: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Paid => 'Amelipa',
-            self::Partial => 'Amelipa kiasi',
-            self::Unpaid => 'Hajalipa',
-        };
+        // Follows the request locale (see SetLocale middleware) — lang/*/enums.php.
+        return __('enums.invoice_status.'.$this->value);
     }
 
     public function color(): string

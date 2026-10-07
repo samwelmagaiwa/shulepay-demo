@@ -42,7 +42,7 @@ class ReceiptController extends Controller
 
         $receipt->load(['student.currentEnrollment.school', 'payment.invoice.term']);
         $content = $this->pdf->generate($receipt);
-        $filename = "Risiti-{$receipt->receipt_number}.pdf";
+        $filename = __('pdf.receipt.filename')."-{$receipt->receipt_number}.pdf";
 
         // ?download=1 forces a file save; the default stays inline so the browser's own
         // PDF viewer can open it (which is what the Print action relies on).
@@ -69,7 +69,7 @@ class ReceiptController extends Controller
         }
 
         $content = $this->statementPdf->generate($student);
-        $filename = 'Taarifa-'.str_replace(' ', '-', $student->fullName()).'.pdf';
+        $filename = __('pdf.student_statement.filename').'-'.str_replace(' ', '-', $student->fullName()).'.pdf';
 
         $disposition = $request->boolean('download') ? 'attachment' : 'inline';
 
@@ -187,16 +187,16 @@ class ReceiptController extends Controller
         $limit = $request->integer('limit', self::MAX_BATCH);
         $students = $query->skip($offset)->take($limit)->get();
 
-        abort_if($students->isEmpty(), 404, 'Hakuna wanafunzi wanaolingana na kigezo hiki.');
+        abort_if($students->isEmpty(), 404, __('pdf.student_statement.no_students'));
 
         abort_if(
             $students->count() > self::MAX_BATCH,
             422,
-            'Wanafunzi ni wengi mno kuchapisha kwa mara moja (kikomo ni '.self::MAX_BATCH.') — punguza kigezo la kuchuja.'
+            __('pdf.bulk_too_many', ['max' => self::MAX_BATCH])
         );
 
         $content = $this->bulkPdf->generate($students, $request->status);
-        $filename = 'Ankara-'.$request->status.'-'.now()->format('Ymd').'.pdf';
+        $filename = __('pdf.student_statement.bulk_filename').'-'.$request->status.'-'.now()->format('Ymd').'.pdf';
 
         $disposition = $request->boolean('download') ? 'attachment' : 'inline';
 

@@ -12,12 +12,7 @@ enum PaymentMethod: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Cash => 'Taslimu',
-            self::Mpesa => 'M-Pesa',
-            self::Bank => 'Benki',
-            self::Cheque => 'Hundi',
-            self::Sponsor => 'Mfadhili',
-        };
+        // Follows the request locale (see SetLocale middleware) — lang/*/enums.php.
+        return __('enums.payment_method.'.$this->value);
     }
 }

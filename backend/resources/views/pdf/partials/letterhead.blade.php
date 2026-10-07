@@ -55,7 +55,7 @@
     <td style="width:28%; vertical-align:middle; text-align:left;
                font-size:{{ $px(11) }}; font-weight:bold; color:#444; line-height:1.55;">
       @foreach($lh['phones'] as $i => $phone)
-        <div>{{ $i === 0 ? 'Tel: ' : '' }}{{ $phone }}</div>
+        <div>{{ $i === 0 ? __('pdf.tel').' ' : '' }}{{ $phone }}</div>
       @endforeach
       @if(!empty($lh['email']))
         <div>{{ $lh['email'] }}</div>

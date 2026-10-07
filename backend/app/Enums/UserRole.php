@@ -25,18 +25,8 @@ enum UserRole: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::SuperAdmin => 'Super Admin',
-            self::Owner => 'Owner',
-            self::Accountant => 'Accountant',
-            self::HeadTeacher => 'Head Teacher',
-            self::Headmaster => 'Headmaster',
-            self::AcademicPri => 'Academic Coordinator (Primary)',
-            self::AcademicSec => 'Academic Coordinator (Secondary)',
-            self::TeacherPri => 'Class Teacher (Primary)',
-            self::TeacherSec => 'Class Teacher (Secondary)',
-            self::Parent => 'Parent / Guardian',
-        };
+        // Follows the request locale (see SetLocale middleware) — lang/*/enums.php.
+        return __('enums.user_role.'.$this->value);
     }
 
     // ── Grouping helpers ──────────────────────────────────────────────────────

@@ -8,7 +8,7 @@
     $billedOf = fn ($i) => $i->total_amount_cents->cents() + $i->arrears_cents->cents() - $i->discount_cents->cents();
 @endphp
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8">
 <style>
@@ -61,44 +61,44 @@
 
   @include('pdf.partials.letterhead', [
     'lh' => $lh,
-    'docTitle' => 'Taarifa ya Ada',
+    'docTitle' => __('pdf.fee_statement.title'),
     'compact' => false,
   ])
 
   <div class="center" style="margin-top:6px;">
-    <div class="sub">Imetolewa: {{ now()->format('d/m/Y H:i') }}</div>
+    <div class="sub">{{ __('pdf.fee_statement.issued') }} {{ now()->format('d/m/Y H:i') }}</div>
   </div>
 
   <div class="hr"></div>
 
   <table class="kv">
     <tr>
-      <td class="k">Mwanafunzi</td>
+      <td class="k">{{ __('pdf.fee_statement.student') }}</td>
       <td class="v">{{ $student->fullName() }}</td>
-      <td class="k">Namba ya Usajili</td>
+      <td class="k">{{ __('pdf.fee_statement.admission_no') }}</td>
       <td class="v">{{ $enrollment?->admission_number ?: '—' }}</td>
     </tr>
     <tr>
-      <td class="k">Darasa</td>
+      <td class="k">{{ __('pdf.fee_statement.class') }}</td>
       <td class="v">{{ $enrollment?->schoolClass?->name ?: '—' }}</td>
-      <td class="k">Shule</td>
+      <td class="k">{{ __('pdf.fee_statement.school') }}</td>
       <td class="v">{{ $school?->name ?: '—' }}</td>
     </tr>
   </table>
 
   @if($invoices->isEmpty())
-    <p class="muted center" style="margin-top:30px;">Hakuna ankara kwa mwanafunzi huyu.</p>
+    <p class="muted center" style="margin-top:30px;">{{ __('pdf.fee_statement.no_invoices') }}</p>
   @else
     <table class="inv">
       <thead>
         <tr>
-          <th>Ankara</th>
-          <th>Muhula</th>
-          <th>Mwaka</th>
-          <th class="amt">Jumla</th>
-          <th class="amt">Imelipwa</th>
-          <th class="amt">Salio</th>
-          <th>Hali</th>
+          <th>{{ __('pdf.fee_statement.invoice') }}</th>
+          <th>{{ __('pdf.fee_statement.term') }}</th>
+          <th>{{ __('pdf.fee_statement.year') }}</th>
+          <th class="amt">{{ __('pdf.fee_statement.total') }}</th>
+          <th class="amt">{{ __('pdf.fee_statement.paid') }}</th>
+          <th class="amt">{{ __('pdf.fee_statement.balance') }}</th>
+          <th>{{ __('pdf.fee_statement.status_col') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -118,7 +118,7 @@
             <td class="amt {{ $bal > 0 ? 'due' : 'paid' }}">{{ $money($bal) }}</td>
             <td>
               <span class="badge b-{{ $status }}">
-                {{ ['paid' => 'IMELIPWA', 'partial' => 'SEHEMU', 'unpaid' => 'HAIJALIPWA'][$status] ?? strtoupper($status) }}
+                {{ in_array($status, ['paid', 'partial', 'unpaid'], true) ? __('pdf.fee_statement.status.'.$status) : strtoupper($status) }}
               </span>
             </td>
           </tr>
@@ -138,26 +138,26 @@
 
     <table class="totals">
       <tr>
-        <td class="k">Jumla ya Ada</td>
+        <td class="k">{{ __('pdf.fee_statement.total_fees') }}</td>
         <td class="v">{{ $money($totalBilled) }}</td>
       </tr>
       <tr>
-        <td class="k">Jumla Iliyolipwa</td>
+        <td class="k">{{ __('pdf.fee_statement.total_paid') }}</td>
         <td class="v paid">{{ $money($totalPaid) }}</td>
       </tr>
       <tr class="grand">
-        <td class="k bold">SALIO</td>
+        <td class="k bold">{{ mb_strtoupper(__('pdf.fee_statement.balance_total')) }}</td>
         <td class="v {{ $totalBalance > 0 ? 'due' : 'paid' }}">{{ $money($totalBalance) }}</td>
       </tr>
     </table>
 
     @if($totalBalance <= 0)
-      <div class="center bold" style="color:#007f3e; margin-top:14px;">✓ ADA YOTE IMELIPWA</div>
+      <div class="center bold" style="color:#007f3e; margin-top:14px;">✓ {{ mb_strtoupper(__('pdf.fee_statement.all_settled')) }}</div>
     @endif
   @endif
 
   <div class="footer">
-    Hati hii imetolewa na mfumo na ni sahihi bila saini.<br>
+    {{ __('pdf.fee_statement.footer') }}<br>
     {{ $appName }} &copy; {{ date('Y') }} {{ $appTagline }}
   </div>
 </body>

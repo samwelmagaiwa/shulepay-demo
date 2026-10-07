@@ -27,9 +27,10 @@ enum SchoolLevel: string
 
     public function label(): string
     {
+        // Follows the request locale (see SetLocale middleware) — lang/*/enums.php.
         return match ($this) {
-            self::Primary, self::Msingi => 'Msingi',
-            self::Secondary, self::Sekondari => 'Sekondari',
+            self::Primary, self::Msingi => __('enums.school_level.primary'),
+            self::Secondary, self::Sekondari => __('enums.school_level.secondary'),
         };
     }
 

@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureDashboardUnlocked;
 use App\Http\Middleware\EnsureParentOwnsStudent;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\SetActiveSchool;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // RouteNotFoundException first and the guest saw a 500 instead of the JSON
         // 401 configured below. Returning null skips the redirect entirely.
         $middleware->redirectGuestsTo(fn () => null);
+        $middleware->appendToGroup('api', SetLocale::class);
         $middleware->appendToGroup('api', SetActiveSchool::class);
         $middleware->appendToGroup('api', EnsureUserIsActive::class);
         $middleware->alias([

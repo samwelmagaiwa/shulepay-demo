@@ -31,7 +31,7 @@
     $hiddenTotal = $hiddenLines->sum(fn ($l) => $l->amount_cents->cents());
 @endphp
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="{{ app()->getLocale() }}">
 <head>
 <meta charset="utf-8">
 <style>
@@ -81,7 +81,7 @@
   {{-- ── Letterhead (shared with statements and reports) ─────── --}}
   @include('pdf.partials.letterhead', [
     'lh' => $lh,
-    'docTitle' => 'Risiti ya Malipo',
+    'docTitle' => __('pdf.receipt.title'),
     'compact' => false,
   ])
 
@@ -89,8 +89,8 @@
        reference rather than part of the school's address block. --}}
   <table style="width:100%; border-collapse:collapse; margin-top:10px;">
     <tr>
-      <td style="font-size:10px; color:#666; letter-spacing:1px;">NAMBA YA RISITI</td>
-      <td style="font-size:10px; color:#666; text-align:right; letter-spacing:1px;">TAREHE</td>
+      <td style="font-size:10px; color:#666; letter-spacing:1px;">{{ mb_strtoupper(__('pdf.receipt.receipt_no')) }}</td>
+      <td style="font-size:10px; color:#666; text-align:right; letter-spacing:1px;">{{ mb_strtoupper(__('pdf.receipt.date')) }}</td>
     </tr>
     <tr>
       <td style="font-size:19px; font-weight:bold; color:#007f3e;">{{ $receipt->receipt_number }}</td>
@@ -105,23 +105,23 @@
   {{-- ── Student ────────────────────────────────────────────── --}}
   <table class="kv">
     <tr>
-      <td class="k">Mwanafunzi</td>
+      <td class="k">{{ __('pdf.receipt.student') }}</td>
       <td class="v">{{ $receipt->student?->fullName() ?: '—' }}</td>
     </tr>
     <tr>
-      <td class="k">Namba ya Usajili</td>
+      <td class="k">{{ __('pdf.receipt.admission_no') }}</td>
       {{-- admission_number lives on the enrollment, not on the student --}}
       <td class="v">{{ $enrollment?->admission_number ?: '—' }}</td>
     </tr>
     @if($enrollment?->schoolClass)
     <tr>
-      <td class="k">Darasa</td>
+      <td class="k">{{ __('pdf.receipt.class') }}</td>
       <td class="v">{{ $enrollment->schoolClass->name }}</td>
     </tr>
     @endif
     @if($guardian)
     <tr>
-      <td class="k">Mzazi / Mlezi</td>
+      <td class="k">{{ __('pdf.receipt.guardian') }}</td>
       <td class="v">{{ $guardian->fullName() }}</td>
     </tr>
     @endif
@@ -133,30 +133,30 @@
   {{-- ── Payment / invoice context ──────────────────────────── --}}
   <table class="kv">
     <tr>
-      <td class="k">Ankara</td>
+      <td class="k">{{ __('pdf.receipt.invoice') }}</td>
       <td class="v">{{ $invoice?->invoice_number ?: '—' }}</td>
     </tr>
     <tr>
-      <td class="k">Muhula</td>
+      <td class="k">{{ __('pdf.receipt.term') }}</td>
       <td class="v">{{ $invoice?->term?->name ?: '—' }}</td>
     </tr>
     @if($invoice?->academicYear)
     <tr>
-      <td class="k">Mwaka wa Masomo</td>
+      <td class="k">{{ __('pdf.receipt.academic_year') }}</td>
       <td class="v">{{ $invoice->academicYear->name }}</td>
     </tr>
     @endif
     <tr>
-      <td class="k">Tarehe ya Malipo</td>
+      <td class="k">{{ __('pdf.receipt.payment_date') }}</td>
       <td class="v">{{ $payment->paid_at?->format('d/m/Y') ?: '—' }}</td>
     </tr>
     <tr>
-      <td class="k">Njia ya Malipo</td>
+      <td class="k">{{ __('pdf.receipt.payment_method') }}</td>
       <td class="v">{{ $payment->method->label() }}</td>
     </tr>
     @if($payment->reference_number)
     <tr>
-      <td class="k">Kumbukumbu</td>
+      <td class="k">{{ __('pdf.receipt.reference') }}</td>
       <td class="v">{{ $payment->reference_number }}</td>
     </tr>
     @endif
@@ -168,8 +168,8 @@
   <table class="items {{ $dense ? 'dense' : '' }}">
     <thead>
       <tr>
-        <th>Maelezo</th>
-        <th class="amt">Kiasi</th>
+        <th>{{ __('pdf.receipt.description') }}</th>
+        <th class="amt">{{ __('pdf.receipt.amount') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -181,7 +181,7 @@
       @endforeach
       @if($hiddenLines->isNotEmpty())
       <tr>
-        <td>Vipengele vingine ({{ $hiddenLines->count() }})</td>
+        <td>{{ __('pdf.receipt.other_items', ['count' => $hiddenLines->count()]) }}</td>
         <td class="amt">{{ $money($hiddenTotal) }}</td>
       </tr>
       @endif
@@ -191,25 +191,25 @@
 
   {{-- ── Amount received ────────────────────────────────────── --}}
   <div class="amount-box">
-    <div class="amount-lbl">KIASI KILICHOLIPWA</div>
+    <div class="amount-lbl">{{ mb_strtoupper(__('pdf.receipt.amount_paid')) }}</div>
     <div class="amount">{{ $money($payment->amount_cents->cents()) }}</div>
   </div>
 
   {{-- ── Running invoice position ───────────────────────────── --}}
   <table class="kv">
     <tr>
-      <td class="k">Jumla ya Ankara</td>
+      <td class="k">{{ __('pdf.receipt.invoice_total') }}</td>
       <td class="v">{{ $money($invoiceTotal) }}</td>
     </tr>
     <tr>
-      <td class="k">Jumla Iliyolipwa</td>
+      <td class="k">{{ __('pdf.receipt.total_paid') }}</td>
       <td class="v balance-paid">{{ $money($invoicePaid) }}</td>
     </tr>
   </table>
   <div class="hr-solid"></div>
   <table class="kv">
     <tr>
-      <td class="k bold">SALIO</td>
+      <td class="k bold">{{ mb_strtoupper(__('pdf.receipt.balance')) }}</td>
       <td class="v {{ $invoiceDue > 0 ? 'balance-due' : 'balance-paid' }}">
         {{ $money($invoiceDue) }}
       </td>
@@ -218,7 +218,7 @@
 
   @if($invoiceDue <= 0)
     <div class="center bold settled" style="color:#007f3e; margin-top:10px;">
-      ✓ ANKARA IMELIPWA YOTE
+      ✓ {{ mb_strtoupper(__('pdf.receipt.settled')) }}
     </div>
   @endif
 
@@ -226,7 +226,7 @@
   <div class="hr"></div>
   <table class="kv">
     <tr>
-      <td class="k">Imepokelewa na</td>
+      <td class="k">{{ __('pdf.receipt.received_by') }}</td>
       <td class="v">{{ $payment->recorder->name }}</td>
     </tr>
   </table>
@@ -235,7 +235,7 @@
 
   <div class="hr"></div>
   <div class="footer">
-    Asante kwa malipo yako. Hati hii ni ushahidi wa malipo.<br>
+    {{ __('pdf.receipt.thank_you') }}<br>
     {{ $appName }} &copy; {{ date('Y') }} {{ $appTagline }}
   </div>
 </body>
